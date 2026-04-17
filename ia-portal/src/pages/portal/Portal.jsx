@@ -4,6 +4,8 @@ import { Badge, Dots } from '../../components/UI';
 import PitchDeck from './PitchDeck';
 import TeamPage  from './TeamPage';
 import Financials from './Financials';
+import Portfolio from './Portfolio';
+
 
 
 
@@ -15,6 +17,8 @@ export default function Portal({ email, onSignOut }) {
   const [showDeck, setShowDeck]     = useState(false);
   const [showTeam, setShowTeam]     = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
+  const [showPortfolio, setShowPortfolio]   = useState(false);
+
 
 
 
@@ -58,6 +62,17 @@ export default function Portal({ email, onSignOut }) {
     }
   }, [showFinancials, email]);
 
+  useEffect(() => {
+    if (showPortfolio) {
+      supabase.from('access_log').insert({ 
+        investor_email: email, 
+        section_key: 'portfolio', 
+        event: 'view' 
+      }).then(() => {});
+    }
+  }, [showPortfolio, email]);
+
+
 
 
   async function trackView(sectionKey) {
@@ -73,7 +88,10 @@ export default function Portal({ email, onSignOut }) {
       setShowTeam(true);
     } else if (s.key === 'financials' || title.includes('financial')) {
       setShowFinancials(true);
+    } else if (s.key === 'portfolio' || title.includes('portfolio')) {
+      setShowPortfolio(true);
     } else {
+
       setViewingSection(s);
     }
   };
@@ -87,6 +105,8 @@ export default function Portal({ email, onSignOut }) {
   if (showDeck) return <PitchDeck onBack={() => setShowDeck(false)} />;
   if (showTeam) return <TeamPage onBack={() => setShowTeam(false)} email={email} />;
   if (showFinancials) return <Financials onBack={() => setShowFinancials(false)} email={email} />;
+  if (showPortfolio) return <Portfolio onBack={() => setShowPortfolio(false)} email={email} />;
+
 
 
 
