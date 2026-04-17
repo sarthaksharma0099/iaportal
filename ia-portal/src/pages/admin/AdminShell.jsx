@@ -5,14 +5,27 @@ import Content    from './Content';
 import Investors  from './Investors';
 import Requests   from './Requests';
 import Analytics  from './Analytics';
+import PortfolioManager from './PortfolioManager';
+import ProgramsManager from './ProgramsManager';
+import ThesesManager from './ThesesManager';
+import TeamManager from './TeamManager';
+import PitchDeckManager from './PitchDeckManager';
+
 
 const NAV = [
   { key: 'dashboard',  label: 'Dashboard',    icon: '▦', group: 'Overview' },
   { key: 'sections',   label: 'Sections',     icon: '◫', group: 'Portal' },
-  { key: 'content',    label: 'Content',      icon: '◈', group: 'Portal' },
+  { key: 'content',    label: 'Hero Content', icon: '◈', group: 'Portal' },
+  { key: 'portfolio',  label: 'Portfolio',    icon: '◉', group: 'Portal' },
+
+  { key: 'programs',   label: 'Programs',     icon: '◫', group: 'Portal' },
+  { key: 'theses',     label: 'Theses',       icon: '◧', group: 'Portal' },
+  { key: 'team',       label: 'Team',         icon: '◎', group: 'Portal' },
+  { key: 'pitchdeck',  label: 'Pitch Deck',   icon: '⬡', group: 'Portal' },
   { key: 'investors',  label: 'Investors',    icon: '◎', group: 'Access' },
   { key: 'requests',   label: 'Requests',     icon: '◉', group: 'Access', badge: true },
-  { key: 'analytics',  label: 'Analytics',   icon: '◧', group: 'Insights' },
+  { key: 'analytics',  label: 'Analytics',    icon: '◧', group: 'Insights' },
+
 ];
 
 export default function AdminShell({ onSignOut, pendingCount }) {
@@ -24,15 +37,26 @@ export default function AdminShell({ onSignOut, pendingCount }) {
     dashboard: <Dashboard />,
     sections:  <Sections />,
     content:   <Content />,
+    portfolio: <PortfolioManager />,
+    programs:  <ProgramsManager />,
+    theses:    <ThesesManager />,
+    team:      <TeamManager />,
+    pitchdeck: <PitchDeckManager />,
     investors: <Investors />,
     requests:  <Requests />,
     analytics: <Analytics />,
+
   };
 
   const titles = {
     dashboard: 'Dashboard', sections: 'Portal Sections',
-    content: 'Content Editor', investors: 'Investor Access',
-    requests: 'Access Requests', analytics: 'Analytics',
+    content: 'Hero Content', portfolio: 'Portfolio Companies',
+
+    programs: 'Programs', theses: 'Investment Theses',
+    team: 'Team Management', pitchdeck: 'Pitch Deck',
+    investors: 'Investor Access', requests: 'Access Requests',
+    analytics: 'Analytics',
+
   };
 
   return (

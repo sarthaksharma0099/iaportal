@@ -5,6 +5,9 @@ import PitchDeck from './PitchDeck';
 import TeamPage  from './TeamPage';
 import Financials from './Financials';
 import Portfolio from './Portfolio';
+import ProgramsPage from './ProgramsPage';
+import ThesesPage from './ThesesPage';
+
 
 
 
@@ -18,6 +21,9 @@ export default function Portal({ email, onSignOut }) {
   const [showTeam, setShowTeam]     = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
   const [showPortfolio, setShowPortfolio]   = useState(false);
+  const [showPrograms, setShowPrograms]     = useState(false);
+  const [showTheses, setShowTheses]         = useState(false);
+
 
 
 
@@ -72,6 +78,27 @@ export default function Portal({ email, onSignOut }) {
     }
   }, [showPortfolio, email]);
 
+  useEffect(() => {
+    if (showPrograms) {
+      supabase.from('access_log').insert({ 
+        investor_email: email, 
+        section_key: 'programs', 
+        event: 'view' 
+      }).then(() => {});
+    }
+  }, [showPrograms, email]);
+
+  useEffect(() => {
+    if (showTheses) {
+      supabase.from('access_log').insert({ 
+        investor_email: email, 
+        section_key: 'theses', 
+        event: 'view' 
+      }).then(() => {});
+    }
+  }, [showTheses, email]);
+
+
 
 
 
@@ -82,16 +109,21 @@ export default function Portal({ email, onSignOut }) {
   const handleSectionClick = (s) => {
     trackView(s.key);
     const title = s.title.toLowerCase();
-    if (s.key === 'pitch_deck' || title.includes('pitch') || title.includes('introduction')) {
-      setShowDeck(true);
-    } else if (s.key === 'team' || title.includes('team') || title.includes('leadership')) {
-      setShowTeam(true);
-    } else if (s.key === 'financials' || title.includes('financial')) {
-      setShowFinancials(true);
-    } else if (s.key === 'portfolio' || title.includes('portfolio')) {
-      setShowPortfolio(true);
-    } else {
+    const type = s.section_type;
 
+    if (type === 'team' || title.includes('team') || title.includes('leadership')) {
+      setShowTeam(true);
+    } else if (type === 'pitch_deck' || title.includes('pitch deck') || title.includes('deck')) {
+      setShowDeck(true);
+    } else if (type === 'financials' || title.includes('financial')) {
+      setShowFinancials(true);
+    } else if (type === 'portfolio' || title.includes('portfolio')) {
+      setShowPortfolio(true);
+    } else if (type === 'programs' || title.includes('program')) {
+      setShowPrograms(true);
+    } else if (type === 'theses' || title.includes('theses') || title.includes('focus')) {
+      setShowTheses(true);
+    } else {
       setViewingSection(s);
     }
   };
@@ -106,6 +138,9 @@ export default function Portal({ email, onSignOut }) {
   if (showTeam) return <TeamPage onBack={() => setShowTeam(false)} email={email} />;
   if (showFinancials) return <Financials onBack={() => setShowFinancials(false)} email={email} />;
   if (showPortfolio) return <Portfolio onBack={() => setShowPortfolio(false)} email={email} />;
+  if (showPrograms) return <ProgramsPage onBack={() => setShowPrograms(false)} />;
+  if (showTheses) return <ThesesPage onBack={() => setShowTheses(false)} />;
+
 
 
 
