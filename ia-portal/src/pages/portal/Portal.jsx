@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Badge, Dots } from '../../components/UI';
 import PitchDeck from './PitchDeck';
+import TeamPage  from './TeamPage';
+import Financials from './Financials';
+
+
 
 export default function Portal({ email, onSignOut }) {
   const [sections, setSections]   = useState([]);
@@ -9,6 +13,10 @@ export default function Portal({ email, onSignOut }) {
   const [loading, setLoading]     = useState(true);
   const [viewingSection, setViewingSection] = useState(null);
   const [showDeck, setShowDeck]     = useState(false);
+  const [showTeam, setShowTeam]     = useState(false);
+  const [showFinancials, setShowFinancials] = useState(false);
+
+
 
   useEffect(() => {
     loadAll();
@@ -30,24 +38,57 @@ export default function Portal({ email, onSignOut }) {
     setLoading(false);
   }
 
+  useEffect(() => {
+    if (showTeam) {
+      supabase.from('access_log').insert({ 
+        investor_email: email, 
+        section_key: 'team_page', 
+        event: 'view' 
+      }).then(() => {});
+    }
+  }, [showTeam, email]);
+
+  useEffect(() => {
+    if (showFinancials) {
+      supabase.from('access_log').insert({ 
+        investor_email: email, 
+        section_key: 'financials', 
+        event: 'view' 
+      }).then(() => {});
+    }
+  }, [showFinancials, email]);
+
+
+
   async function trackView(sectionKey) {
     await supabase.from('access_log').insert({ investor_email: email, section_key: sectionKey, event: 'view' });
   }
 
   const handleSectionClick = (s) => {
     trackView(s.key);
-    if (s.key === 'pitch_deck' || s.title.includes('Pitch') || s.title.includes('Introduction')) {
+    const title = s.title.toLowerCase();
+    if (s.key === 'pitch_deck' || title.includes('pitch') || title.includes('introduction')) {
       setShowDeck(true);
+    } else if (s.key === 'team' || title.includes('team') || title.includes('leadership')) {
+      setShowTeam(true);
+    } else if (s.key === 'financials' || title.includes('financial')) {
+      setShowFinancials(true);
     } else {
       setViewingSection(s);
     }
   };
+
+
 
   const hero    = content['hero']       || {};
   const fin     = content['financials'] || {};
   const gridSec = sections.filter(s => s.key !== 'hero');
 
   if (showDeck) return <PitchDeck onBack={() => setShowDeck(false)} />;
+  if (showTeam) return <TeamPage onBack={() => setShowTeam(false)} email={email} />;
+  if (showFinancials) return <Financials onBack={() => setShowFinancials(false)} email={email} />;
+
+
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
