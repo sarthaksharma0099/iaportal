@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabaseAdmin } from '../../lib/supabase';
 import { Btn, Card, Badge, Modal, Input, Select, Textarea, Dots, useToast } from '../../components/UI';
 
@@ -20,11 +20,7 @@ export default function ProgramsManager() {
     start_date: '', end_date: '', app_count: 0, is_visible: true
   });
 
-  useEffect(() => {
-    loadPrograms();
-  }, []);
-
-  async function loadPrograms() {
+  const loadPrograms = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabaseAdmin
@@ -35,7 +31,11 @@ export default function ProgramsManager() {
       setPrograms(data || []);
     } catch (e) { toast(e.message, 'error'); }
     finally { setLoading(false); }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    loadPrograms();
+  }, [loadPrograms]);
 
   const handleAdd = () => {
     setEditingProgram(null);

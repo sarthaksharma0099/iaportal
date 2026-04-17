@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabaseAdmin } from '../../lib/supabase';
-import { Btn, Card, Badge, Modal, Input, Select, Textarea, Dots, useToast } from '../../components/UI';
+import { Btn, Card, Modal, Input, Select, Textarea, Dots, useToast } from '../../components/UI';
 
 const CATEGORIES = [
   { label: 'Founding', value: 'founding' },
@@ -26,11 +26,7 @@ export default function TeamManager() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    loadMembers();
-  }, []);
-
-  async function loadMembers() {
+  const loadMembers = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabaseAdmin
@@ -42,7 +38,11 @@ export default function TeamManager() {
       setMembers(data || []);
     } catch (e) { toast(e.message, 'error'); }
     finally { setLoading(false); }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
 
   const handleAdd = () => {
     setEditingMember(null);

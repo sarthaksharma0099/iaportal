@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabaseAdmin } from '../../lib/supabase';
-import { Btn, Badge, Modal, Input, Select, Textarea, Dots, useToast } from '../../components/UI';
+import { Btn, Badge, Modal, Input, Select, Textarea, useToast } from '../../components/UI';
 
 const SECTORS = [
   'All', 'Defence', 'Energy', 'Frontier Tech', 'Fintech', 
@@ -12,7 +12,6 @@ const STAGES = ['All Stages', 'Pre-Seed', 'Seed', 'Series A', 'Pre-IPO', 'Growth
 
 export default function PortfolioManager() {
   const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All Stages');
   const [sectorFilter, setSectorFilter] = useState('All');
@@ -29,12 +28,7 @@ export default function PortfolioManager() {
     is_featured: false, is_visible: true
   });
 
-  useEffect(() => {
-    loadCompanies();
-  }, []);
-
-  async function loadCompanies() {
-    setLoading(true);
+  const loadCompanies = useCallback(async () => {
     try {
       const { data, error } = await supabaseAdmin
         .from('portfolio_companies')
@@ -44,10 +38,12 @@ export default function PortfolioManager() {
       setCompanies(data || []);
     } catch (e) {
       toast(e.message, 'error');
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
 
   async function handleLogoUpload(e) {
     const file = e.target.files[0];

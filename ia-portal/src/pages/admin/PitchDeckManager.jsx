@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, supabaseAdmin } from '../../lib/supabase';
 import { Btn, Card, Dots, useToast } from '../../components/UI';
 
@@ -10,11 +10,7 @@ export default function PitchDeckManager() {
   const fileInputRef = useRef();
   const toast = useToast();
 
-  useEffect(() => {
-    loadConfig();
-  }, []);
-
-  async function loadConfig() {
+  const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabaseAdmin
@@ -25,7 +21,11 @@ export default function PitchDeckManager() {
       setConfig(data);
     } catch (e) { toast(e.message, 'error'); }
     finally { setLoading(false); }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];

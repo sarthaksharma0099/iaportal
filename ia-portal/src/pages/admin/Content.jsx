@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabaseAdmin } from '../../lib/supabase';
 import { Btn, useToast, Dots } from '../../components/UI';
 
@@ -11,7 +11,6 @@ const ALLOWED_BLOCKS = [
 ];
 
 export default function Content() {
-  const [sections, setSections]       = useState([]);
   const [selected, setSelected]       = useState(null);
   const [blocks, setBlocks]           = useState([]);
   const [edits, setEdits]             = useState({});
@@ -19,21 +18,7 @@ export default function Content() {
   const [loadingBlocks, setLoadingBlocks] = useState(false);
   const toast = useToast();
 
-  useEffect(() => { loadSections(); }, []);
-
-  async function loadSections() {
-    // Only show 'hero' section
-    const { data } = await supabaseAdmin
-      .from('portal_sections')
-      .select('key,title,icon')
-      .eq('key', 'hero');
-    setSections(data || []);
-    if (data && data.length > 0) {
-      selectSection(data[0].key, data[0].title);
-    }
-  }
-
-  async function selectSection(key, title) {
+  const selectSection = useCallback(async (key, title) => {
     setSelected({ key, title });
     setLoadingBlocks(true);
     const { data } = await supabaseAdmin
@@ -49,7 +34,21 @@ export default function Content() {
     filtered.forEach(b => { map[b.block_key] = b.value || ''; });
     setEdits(map);
     setLoadingBlocks(false);
-  }
+  }, []);
+
+  const loadSections = useCallback(async () => {
+    // Only show 'hero' section
+    const { data } = await supabaseAdmin
+      .from('portal_sections')
+      .select('key,title,icon')
+      .eq('key', 'hero');
+    
+    if (data && data.length > 0) {
+      selectSection(data[0].key, data[0].title);
+    }
+  }, [selectSection]);
+
+  useEffect(() => { loadSections(); }, [loadSections]);
 
   async function save() {
     if (!selected) return;

@@ -85,7 +85,7 @@ export default function TeamPage({ onBack }) {
         .from('team_members')
         .select('*')
         .eq('is_visible', true)
-        .order('sort_order', { ascending: true });
+        .order('sort_order');
       setMembers(data || []);
       setLoading(false);
     }

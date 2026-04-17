@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabaseAdmin } from '../../lib/supabase';
 import { Btn, Card, Badge, Modal, Input, Textarea, Dots, useToast } from '../../components/UI';
 
@@ -15,11 +15,7 @@ export default function ThesesManager() {
     color: '#00B4A6', is_visible: true
   });
 
-  useEffect(() => {
-    loadTheses();
-  }, []);
-
-  async function loadTheses() {
+  const loadTheses = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabaseAdmin
@@ -30,7 +26,11 @@ export default function ThesesManager() {
       setTheses(data || []);
     } catch (e) { toast(e.message, 'error'); }
     finally { setLoading(false); }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    loadTheses();
+  }, [loadTheses]);
 
   const handleAdd = () => {
     setEditingThesis(null);
