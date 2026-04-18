@@ -11,6 +11,7 @@ import ProgramsManager from './ProgramsManager';
 import ThesesManager from './ThesesManager';
 import TeamManager from './TeamManager';
 import PitchDeckManager from './PitchDeckManager';
+import FinancialsManager from './FinancialsManager';
 
 const NAV = [
   { key: 'dashboard',  label: 'Dashboard',    icon: '▦', group: 'Overview' },
@@ -21,6 +22,7 @@ const NAV = [
   { key: 'theses',     label: 'Theses',       icon: '◧', group: 'Portal' },
   { key: 'team',       label: 'Team',         icon: '◎', group: 'Portal' },
   { key: 'pitchdeck',  label: 'Pitch Deck',   icon: '⬡', group: 'Portal' },
+  { key: 'financials', label: 'Financials',   icon: '▦', group: 'Portal' },
   { key: 'investors',  label: 'Investors',    icon: '◎', group: 'Access' },
   { key: 'requests',   label: 'Requests',     icon: '◉', group: 'Access', badge: true },
   { key: 'analytics',  label: 'Analytics',    icon: '◧', group: 'Insights' },
@@ -45,6 +47,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
     theses: 'Investment Theses',
     team: 'Team Management', 
     pitchdeck: 'Pitch Deck',
+    financials: 'Financials Manager',
     investors: 'Investor Access', 
     requests: 'Access Requests',
     analytics: 'Analytics',
@@ -134,6 +137,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
             <Route path="theses" element={<ThesesManager />} />
             <Route path="team" element={<TeamManager />} />
             <Route path="pitchdeck" element={<PitchDeckManager />} />
+            <Route path="financials" element={<FinancialsManager />} />
             <Route path="investors" element={<Investors />} />
             <Route path="requests" element={<Requests />} />
             <Route path="analytics" element={<Analytics />} />
