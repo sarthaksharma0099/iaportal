@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Dots } from '../../components/UI';
 
@@ -75,21 +76,29 @@ const MentorCard = ({ member }) => {
   );
 };
 
-export default function TeamPage({ onBack }) {
+export default function TeamPage({ onBack, email }) {
+  const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
-      const { data } = await supabase
-        .from('team_members')
-        .select('*')
-        .eq('is_visible', true)
-        .order('sort_order');
-      setMembers(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('team_members')
+          .select('*')
+          .eq('is_visible', true)
+          .order('sort_order');
+        if (!cancelled) setMembers(data || []);
+      } catch (e) {
+        console.error('Error loading team:', e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     load();
+    return () => { cancelled = true; };
   }, []);
 
   const founding   = members.filter(m => m.category === 'founding');
@@ -108,7 +117,7 @@ export default function TeamPage({ onBack }) {
     <div style={{ minHeight: '100vh', background: '#0a0a08', color: '#ffffff', fontFamily: "'DM Sans', sans-serif" }}>
       {/* Top Bar Navigation */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 64, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', background: 'rgba(10,10,8,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#c9a84c', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: '#c9a84c', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
           ← Back to Portal
         </button>
         <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>Team & Leadership</div>

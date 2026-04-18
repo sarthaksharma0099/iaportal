@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Dots } from '../../components/UI';
 
@@ -10,32 +11,34 @@ const SECTORS = [
 const STAGES = ['All Stages', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Pre-IPO', 'Growth'];
 
 export default function Portfolio({ onBack }) {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeStage, setActiveStage] = useState('All Stages');
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadPortfolio();
-  }, []);
-
-  async function loadPortfolio() {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('portfolio_companies')
-        .select('*')
-        .eq('is_visible', true)
-        .order('sort_order', { ascending: true })
-        .order('name', { ascending: true });
-      if (error) throw error;
-      setCompanies(data || []);
-    } catch (e) {
-      console.error('Error loading portfolio:', e.message);
-    } finally {
-      setLoading(false);
+    let cancelled = false;
+    async function loadPortfolio() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('portfolio_companies')
+          .select('*')
+          .eq('is_visible', true)
+          .order('sort_order', { ascending: true })
+          .order('name', { ascending: true });
+        if (error) throw error;
+        if (!cancelled) setCompanies(data || []);
+      } catch (e) {
+        console.error('Error loading portfolio:', e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-  }
+    loadPortfolio();
+    return () => { cancelled = true; };
+  }, []);
 
   const filteredPortfolio = companies.filter(item => {
     const sectorMatch = activeFilter === 'All' || item.sector === activeFilter;
@@ -69,7 +72,7 @@ export default function Portfolio({ onBack }) {
         padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'rgba(10,10,8,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'
       }}>
-        <button onClick={onBack} style={{ fontSize: 15, color: '#c9a84c', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => navigate('/')} style={{ fontSize: 15, color: '#c9a84c', background: 'none', border: 'none', cursor: 'pointer' }}>
           ← Back to Portal
         </button>
         <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>

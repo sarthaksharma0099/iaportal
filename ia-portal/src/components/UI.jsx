@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 /* ── Button ── */
 export function Btn({ children, variant = 'gold', size = 'md', full, disabled, onClick, style }) {
@@ -174,7 +174,9 @@ export function Modal({ open, onClose, title, subtitle, children }) {
 /* ── Toast ── */
 let _setToast = null;
 export function useToast() {
-  const show = (msg, type = 'success') => _setToast && _setToast({ msg, type, id: Date.now() });
+  const show = useCallback((msg, type = 'success') => {
+    if (_setToast) _setToast({ msg, type, id: Date.now() });
+  }, []);
   return show;
 }
 

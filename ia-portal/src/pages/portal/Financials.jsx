@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Dots } from '../../components/UI';
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
@@ -63,20 +66,47 @@ const chartStyles = {
   legend: { wrapperStyle: { color: 'rgba(255,255,255,0.6)', fontSize: 13 } }
 };
 
-export default function Financials({ onBack }) {
+export default function Financials({ onBack, email }) {
+  const navigate = useNavigate();
+  const [financials, setFinancials] = useState({});
+  const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState('INR');
   const [activeSection, setActiveSection] = useState('overview');
   const [selectedYear, setSelectedYear] = useState('FY26');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const { data } = await supabase
+          .from('content_blocks')
+          .select('*')
+          .eq('section_key', 'financials');
+        if (!cancelled) {
+          const map = {};
+          if (data) data.forEach(b => map[b.block_key] = b.value);
+          setFinancials(map);
+        }
+      } catch (e) {
+        console.error('Error loading financials:', e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
   const USD_RATE = 0.012;
 
-  function fmtCr(crores, suffix = '') {
+  const fmtCr = (crores, suffix = '') => {
     if (currency === 'INR') {
       return '₹' + crores + ' Cr' + suffix;
     } else {
       const usd = Math.round(crores * 10000000 * USD_RATE / 1000000);
       return '$' + usd + 'M' + suffix;
     }
-  }
+  };
 
   const navLinks = [
     { id: 'overview', label: 'Overview' },
@@ -97,6 +127,8 @@ export default function Financials({ onBack }) {
     }
   };
 
+  if (loading) return <div style={{ minHeight: '100vh', background: '#0a0a08', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Dots /></div>;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a08', color: '#ffffff', fontFamily: "'DM Sans', sans-serif" }}>
       {/* Top Bar */}
@@ -105,7 +137,7 @@ export default function Financials({ onBack }) {
         padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'rgba(10,10,8,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)'
       }}>
-        <button onClick={onBack} style={{ fontSize: 15, color: '#c9a84c', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => navigate('/')} style={{ fontSize: 15, color: '#c9a84c', background: 'none', border: 'none', cursor: 'pointer' }}>
           ← Back to Portal
         </button>
         <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>
@@ -168,7 +200,7 @@ export default function Financials({ onBack }) {
             Startup Ecosystem
           </h1>
           <p style={{ fontSize: 17, color: '#9e9b92', maxWidth: 600, lineHeight: 1.7, marginBottom: 48 }}>
-            India Accelerator manages 5 active funds with ₹500 Cr+ in commitments, deploying capital across pre-seed to growth stage startups.
+            {financials?.hero_description || "India Accelerator manages 5 active funds with ₹500 Cr+ in commitments, deploying capital across pre-seed to growth stage startups."}
           </p>
 
           <div style={{

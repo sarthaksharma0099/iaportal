@@ -10,22 +10,28 @@ export default function PitchDeckManager() {
   const fileInputRef = useRef();
   const toast = useToast();
 
-  const loadConfig = useCallback(async () => {
-    setLoading(true);
+  const loadConfigData = useCallback(async (isMountedRef) => {
     try {
       const { data, error } = await supabaseAdmin
         .from('pitch_deck_config')
         .select('*')
-        .single();
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows found"
-      setConfig(data);
-    } catch (e) { toast(e.message, 'error'); }
-    finally { setLoading(false); }
+        .maybeSingle(); // Prevents PGRST116 error if table is empty
+      
+      if (error) throw error;
+      if (isMountedRef?.current !== false) setConfig(data);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      if (isMountedRef?.current !== false) setLoading(false);
+    }
   }, [toast]);
 
   useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+    const isMounted = { current: true };
+    setLoading(true);
+    loadConfigData(isMounted);
+    return () => { isMounted.current = false; };
+  }, [loadConfigData]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -67,7 +73,7 @@ export default function PitchDeckManager() {
 
       setProgress(100);
       toast('Pitch deck uploaded successfully');
-      loadConfig();
+      loadConfigData();
     } catch (e) {
       toast(e.message, 'error');
     } finally {

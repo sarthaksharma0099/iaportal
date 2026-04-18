@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard  from './Dashboard';
 import Sections   from './Sections';
 import Content    from './Content';
@@ -11,13 +12,11 @@ import ThesesManager from './ThesesManager';
 import TeamManager from './TeamManager';
 import PitchDeckManager from './PitchDeckManager';
 
-
 const NAV = [
   { key: 'dashboard',  label: 'Dashboard',    icon: '▦', group: 'Overview' },
   { key: 'sections',   label: 'Sections',     icon: '◫', group: 'Portal' },
   { key: 'content',    label: 'Hero Content', icon: '◈', group: 'Portal' },
   { key: 'portfolio',  label: 'Portfolio',    icon: '◉', group: 'Portal' },
-
   { key: 'programs',   label: 'Programs',     icon: '◫', group: 'Portal' },
   { key: 'theses',     label: 'Theses',       icon: '◧', group: 'Portal' },
   { key: 'team',       label: 'Team',         icon: '◎', group: 'Portal' },
@@ -25,38 +24,30 @@ const NAV = [
   { key: 'investors',  label: 'Investors',    icon: '◎', group: 'Access' },
   { key: 'requests',   label: 'Requests',     icon: '◉', group: 'Access', badge: true },
   { key: 'analytics',  label: 'Analytics',    icon: '◧', group: 'Insights' },
-
 ];
 
 export default function AdminShell({ onSignOut, pendingCount }) {
-  const [page, setPage] = useState('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Extract current page from URL e.g. /admin/investors -> investors
+  const currentPath = location.pathname.split('/').filter(Boolean);
+  const activePage = currentPath[1] || 'dashboard';
 
   const groups = [...new Set(NAV.map(n => n.group))];
 
-  const pages = {
-    dashboard: <Dashboard />,
-    sections:  <Sections />,
-    content:   <Content />,
-    portfolio: <PortfolioManager />,
-    programs:  <ProgramsManager />,
-    theses:    <ThesesManager />,
-    team:      <TeamManager />,
-    pitchdeck: <PitchDeckManager />,
-    investors: <Investors />,
-    requests:  <Requests />,
-    analytics: <Analytics />,
-
-  };
-
   const titles = {
-    dashboard: 'Dashboard', sections: 'Portal Sections',
-    content: 'Hero Content', portfolio: 'Portfolio Companies',
-
-    programs: 'Programs', theses: 'Investment Theses',
-    team: 'Team Management', pitchdeck: 'Pitch Deck',
-    investors: 'Investor Access', requests: 'Access Requests',
+    dashboard: 'Dashboard', 
+    sections: 'Portal Sections',
+    content: 'Hero Content', 
+    portfolio: 'Portfolio Companies',
+    programs: 'Programs', 
+    theses: 'Investment Theses',
+    team: 'Team Management', 
+    pitchdeck: 'Pitch Deck',
+    investors: 'Investor Access', 
+    requests: 'Access Requests',
     analytics: 'Analytics',
-
   };
 
   return (
@@ -85,13 +76,13 @@ export default function AdminShell({ onSignOut, pendingCount }) {
                 {group}
               </div>
               {NAV.filter(n => n.group === group).map(n => (
-                <div key={n.key} onClick={() => setPage(n.key)} style={{
+                <div key={n.key} onClick={() => navigate(`/admin/${n.key}`)} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '0.65rem 1.25rem', cursor: 'pointer',
                   fontSize: 13,
-                  color: page === n.key ? 'var(--gold)' : 'var(--text2)',
-                  borderLeft: `2px solid ${page === n.key ? 'var(--gold)' : 'transparent'}`,
-                  background: page === n.key ? 'var(--gold-dim)' : 'transparent',
+                  color: activePage === n.key ? 'var(--gold)' : 'var(--text2)',
+                  borderLeft: `2px solid ${activePage === n.key ? 'var(--gold)' : 'transparent'}`,
+                  background: activePage === n.key ? 'var(--gold-dim)' : 'transparent',
                   transition: 'all 0.15s',
                 }}>
                   <span style={{ fontSize: 14, width: 20, textAlign: 'center', opacity: 0.8 }}>{n.icon}</span>
@@ -112,7 +103,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
           <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             admin@indiaaccelerator.co
           </div>
-          <button onClick={onSignOut} style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <button onClick={() => { onSignOut(); navigate('/admin'); }} style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
             Sign out →
           </button>
         </div>
@@ -128,12 +119,26 @@ export default function AdminShell({ onSignOut, pendingCount }) {
           background: 'var(--bg)',
           position: 'sticky', top: 0, zIndex: 5,
         }}>
-          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{titles[page]}</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{titles[activePage] || 'Admin'}</span>
         </div>
 
         {/* Page content */}
         <div style={{ padding: '2rem', flex: 1 }}>
-          {pages[page]}
+          <Routes>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="sections" element={<Sections />} />
+            <Route path="content" element={<Content />} />
+            <Route path="portfolio" element={<PortfolioManager />} />
+            <Route path="programs" element={<ProgramsManager />} />
+            <Route path="theses" element={<ThesesManager />} />
+            <Route path="team" element={<TeamManager />} />
+            <Route path="pitchdeck" element={<PitchDeckManager />} />
+            <Route path="investors" element={<Investors />} />
+            <Route path="requests" element={<Requests />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
+          </Routes>
         </div>
       </main>
     </div>

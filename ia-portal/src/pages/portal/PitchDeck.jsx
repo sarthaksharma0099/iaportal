@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 const TEAL = '#00B4A6';
 const GOLD = '#c9a84c';
@@ -26,9 +28,33 @@ function ImageWithFallback({ src, alt, type, initials, GOLD: gColor }) {
 }
 
 export default function PitchDeck({ onBack }) {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [currency, setCurrency] = useState('INR');
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
   const totalSlides = 14;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDeck() {
+      try {
+        const { data } = await supabase
+          .from('pitch_deck_config')
+          .select('pdf_url')
+          .single();
+        if (!cancelled) {
+          setPdfUrl(data?.pdf_url || null);
+        }
+      } catch (e) {
+        console.error('Deck load failed:', e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadDeck();
+    return () => { cancelled = true; };
+  }, []);
 
   const next = useCallback(() => setCurrent(prev => Math.min(prev + 1, totalSlides - 1)), []);
   const prev = useCallback(() => setCurrent(prev => Math.max(prev - 1, 0)), []);
@@ -83,12 +109,20 @@ export default function PitchDeck({ onBack }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 1000, color: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Loading Overlay */}
+      {loading && (
+        <div style={{ position: 'absolute', inset: 0, background: BG, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ color: GOLD, letterSpacing: '0.1em', fontSize: 12 }}>LOADING DECK...</div>
+        </div>
+      )}
       {/* Header */}
       <div style={{ height: 72, padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(10,10,8,0.8)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 16px', color: '#9e9b92', fontSize: 13, cursor: 'pointer' }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 16px', color: '#9e9b92', fontSize: 13, cursor: 'pointer' }}>
           ← Back to List
         </button>
-        <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase', opacity: 0.8 }}>Pitch Deck</div>
+        <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase', opacity: 0.8 }}>
+          {pdfUrl ? 'Pitch Deck (PDF Available)' : 'Pitch Deck'}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <div style={{ fontSize: 13, color: '#5c5a54', fontVariantNumeric: 'tabular-nums' }}>{current + 1} / {totalSlides}</div>
           <div style={{ display: 'flex', background: '#111', borderRadius: 8, padding: 4 }}>

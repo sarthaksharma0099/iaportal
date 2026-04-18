@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Dots, Badge } from '../../components/UI';
 
 export default function ProgramsPage({ onBack }) {
+  const navigate = useNavigate();
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       try {
         const { data, error } = await supabase
@@ -15,14 +18,15 @@ export default function ProgramsPage({ onBack }) {
           .eq('is_visible', true)
           .order('name');
         if (error) throw error;
-        setPrograms(data || []);
+        if (!cancelled) setPrograms(data || []);
       } catch (e) {
         console.error('Error loading programs:', e.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div style={{ minHeight: '100vh', background: '#0a0a08', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Dots /></div>;
@@ -35,7 +39,7 @@ export default function ProgramsPage({ onBack }) {
         padding: '0 40px', background: 'rgba(10,10,8,0.95)', backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)'
       }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#c9a84c', fontSize: 15, cursor: 'pointer' }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: '#c9a84c', fontSize: 15, cursor: 'pointer' }}>
           ← Back to Portal
         </button>
         <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>
