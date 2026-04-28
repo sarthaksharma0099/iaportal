@@ -9,6 +9,7 @@ import PitchDeck from './pages/portal/PitchDeck';
 import TeamPage from './pages/portal/TeamPage';
 import Portfolio from './pages/portal/Portfolio';
 import Financials from './pages/portal/Financials';
+import PresencePage from './pages/portal/PresencePage';
 import ProgramsPage from './pages/portal/ProgramsPage';
 import ThesesPage from './pages/portal/ThesesPage';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -138,12 +139,8 @@ export default function App() {
             : <Navigate to="/" replace />
         } />
 
-        <Route path="/financials" element={
-          investorEmail
-            ? <Financials
-                email={investorEmail} />
-            : <Navigate to="/" replace />
-        } />
+        <Route path="/financials" element={investorEmail ? <Financials email={investorEmail} /> : <Navigate to="/" replace />} />
+        <Route path="/presence" element={investorEmail ? <PresencePage email={investorEmail} /> : <Navigate to="/" replace />} />
 
         <Route path="/programs" element={
           investorEmail

@@ -120,8 +120,9 @@ export default function FinancialsManager() {
         <div style={{ fontSize: 14, color: 'var(--text2)',
           lineHeight: 1.6 }}>
           Connect your Google Sheet to power the financial
-          dashboard shown to investors. Update the sheet
-          anytime — investors see live data instantly.
+          dashboard shown to investors. Update the Google Sheet
+          data directly — changes reflect on the investor portal
+          within 1 minute.
         </div>
       </div>
 

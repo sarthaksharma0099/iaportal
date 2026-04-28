@@ -7,6 +7,34 @@ import { Badge, Dots } from '../../components/UI';
 
 
 
+function cleanDescription(section) {
+  const desc = section.description || ''
+  
+  // Never show URLs as descriptions
+  if (
+    desc.includes('http') ||
+    desc.includes('https') ||
+    desc.includes('docs.google') ||
+    desc.includes('spreadsheet') ||
+    desc.includes('drive.google') ||
+    desc.startsWith('http')
+  ) {
+    const defaults = {
+      pitch_deck: 'Full pitch deck — market opportunity, product, traction and team',
+      financials: 'Interactive financial projections — revenue, portfolio performance and fund metrics',
+      portfolio: 'Active portfolio companies across all investment theses',
+      team: 'Leadership team, thesis owners and mentor board',
+      programs: 'Active accelerator programs and cohorts',
+      theses: 'Our 6 investment thesis areas and portfolio allocation',
+      presence: 'Pan-India and global footprint — 30+ hubs across 16 cities and 8 countries',
+      documents: 'Legal, compliance and governance documentation',
+      hero: 'Fund overview, headline metrics, and thesis',
+    }
+    return defaults[section.key] || 'View details'
+  }
+  return desc
+}
+
 export default function Portal({ email, onSignOut }) {
   const navigate = useNavigate();
   const [sections, setSections]   = useState([]);
@@ -20,7 +48,9 @@ export default function Portal({ email, onSignOut }) {
   async function loadAll() {
     const [secRes, conRes] = await Promise.all([
       supabase.from('portal_sections').select('*').eq('is_visible', true).order('sort_order'),
-      supabase.from('content_blocks').select('*'),
+      supabase.from('content_blocks')
+        .select('block_key, value')
+        .eq('section_key', 'hero'),
     ]);
     setSections(secRes.data || []);
     // Build content map: { section_key: { block_key: value } }
@@ -60,6 +90,10 @@ export default function Portal({ email, onSignOut }) {
     } else if (type === 'theses' || 
                section.key === 'theses') {
       navigate('/theses');
+    } else if (type === 'presence' || 
+               section.key === 'presence' ||
+               section.title?.toLowerCase().includes('presence')) {
+      navigate('/presence');
     }
   }
 
@@ -224,7 +258,7 @@ function MaterialCard({ section, onView }) {
       <Badge variant={isLive ? 'live' : 'soon'}>{section.badge || 'Soon'}</Badge>
       <div style={{ fontSize: 28, marginTop: '1.25rem', marginBottom: '0.75rem', opacity: 0.7 }}>{section.icon || '◈'}</div>
       <div style={{ fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 400, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>{section.title}</div>
-      <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{section.description}</div>
+      <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{cleanDescription(section)}</div>
       {isLive && (
         <div style={{ position: 'absolute', bottom: '1.25rem', right: '1.25rem', fontSize: 18, color: hovered ? 'var(--gold)' : 'var(--text3)', transition: 'all 0.2s', transform: hovered ? 'translate(3px,-3px)' : 'none' }}>↗</div>
       )}

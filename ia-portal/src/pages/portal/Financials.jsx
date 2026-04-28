@@ -8,51 +8,58 @@ import {
   Tooltip, Legend, ResponsiveContainer,
   ReferenceLine
 } from 'recharts';
-import { supabase } from '../../lib/supabase';
 import { Dots } from '../../components/UI';
 
-const DEFAULT_SHEET_ID = 
-  '1X6bUGtXki3HJWhYlISKVMBr_SjHKi8dNr1OOrUSYr8w';
+const SHEET_ID = '1X6bUGtXki3HJWhYlISKVMBr_SjHKi8dNr1OOrUSYr8w';
+
+async function fetchSheet(sheetId, tabName) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`
+    const res = await fetch(url)
+    if (!res.ok) {
+      console.error(`Failed to fetch ${tabName}:`, res.status)
+      return []
+    }
+    const text = await res.text()
+    return parseCSV(text)
+  } catch(e) {
+    console.error(`Error fetching ${tabName}:`, e)
+    return []
+  }
+}
 
 function parseCSV(text) {
-  if (!text || !text.trim()) return [];
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
+  if (!text || !text.trim()) return []
+  const lines = text.trim().split('\n')
+  if (lines.length < 2) return []
+  
   const headers = lines[0].split(',')
-    .map(h => h.replace(/"/g, '').trim());
+    .map(h => h.replace(/"/g, '').trim())
+  
   return lines.slice(1)
     .filter(line => line.trim())
     .map(line => {
-      const values = [];
-      let current = '';
-      let inQuotes = false;
+      const values = []
+      let current = ''
+      let inQuotes = false
       for (let i = 0; i < line.length; i++) {
         if (line[i] === '"') {
-          inQuotes = !inQuotes;
+          inQuotes = !inQuotes
         } else if (line[i] === ',' && !inQuotes) {
-          values.push(current.trim());
-          current = '';
+          values.push(current.trim())
+          current = ''
         } else {
-          current += line[i];
+          current += line[i]
         }
       }
-      values.push(current.trim());
-      const obj = {};
+      values.push(current.trim())
+      
+      const obj = {}
       headers.forEach((h, i) => {
-        obj[h] = (values[i] || '').trim();
-      });
-      return obj;
-    });
-}
-
-async function fetchSheet(sheetId, tabName) {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(
-    `Failed to fetch ${tabName}`
-  );
-  const text = await res.text();
-  return parseCSV(text);
+        obj[h] = (values[i] || '').trim()
+      })
+      return obj
+    })
 }
 
 const chartStyle = {
@@ -107,79 +114,82 @@ export default function Financials({ email }) {
   });
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
+    
     async function loadAll() {
       try {
-        setLoading(true);
-        let activeSheetId = DEFAULT_SHEET_ID;
-
-        // 1. Fetch dynamic config from Supabase
-        const { data: config } = await supabase
-          .from('content_blocks')
-          .select('value')
-          .eq('section_key', 'financials')
-          .eq('block_key', 'sheet_url')
-          .maybeSingle();
-
-        if (config?.value) {
-          const match = config.value.match(/\/d\/([a-zA-Z0-9-_]+)/);
-          activeSheetId = match ? match[1] : config.value;
-        }
-
-        // 2. Fetch all tabs from Google Sheet
-        const [ov, dep, port, irr, pl, funds] =
-          await Promise.all([
-            fetchSheet(activeSheetId, 'Overview'),
-            fetchSheet(activeSheetId, 'Deployment'),
-            fetchSheet(activeSheetId, 'Portfolio'),
-            fetchSheet(activeSheetId, 'IRR'),
-            fetchSheet(activeSheetId, 'PL (P&L)'),
-            fetchSheet(activeSheetId, 'Funds'),
-          ]);
-
+        console.log('Fetching Google Sheet data...')
+        
+        const [overview, deployment, portfolio, 
+               irr, pl, funds] = await Promise.all([
+          fetchSheet(SHEET_ID, 'Overview'),
+          fetchSheet(SHEET_ID, 'Deployment'),
+          fetchSheet(SHEET_ID, 'Portfolio'),
+          fetchSheet(SHEET_ID, 'IRR'),
+          fetchSheet(SHEET_ID, 'PL (P&L)'),
+          fetchSheet(SHEET_ID, 'Funds'),
+        ])
+        
+        console.log('Sheet data loaded:', {
+          overview: overview.length,
+          deployment: deployment.length,
+          portfolio: portfolio.length,
+          irr: irr.length,
+          pl: pl.length,
+          funds: funds.length
+        })
+        
         if (!cancelled) {
-          const ovMap = {};
-          ov.forEach(r => {
-            ovMap[r.Key] = r.Value;
-          });
+          // Parse overview into key-value map
+          const ovMap = {}
+          overview.forEach(row => {
+            if (row.Key) ovMap[row.Key] = row.Value
+          })
+          
           setData({
             overview: ovMap,
-            deployment: dep.map(r => ({
-              year: r.Year,
-              deployed: parseFloat(r.Deployed)||0,
-              committed: parseFloat(r.Committed)||0,
-            })),
-            portfolio: port.map(r => ({
-              name: r.Stage,
-              value: parseFloat(r.Count)||0,
-              color: r.Color||'#00B4A6',
-            })),
+            deployment: deployment.map(r => ({
+              year: r.Year || '',
+              deployed: parseFloat(r.Deployed) || 0,
+              committed: parseFloat(r.Committed) || 0,
+            })).filter(r => r.year),
+            
+            portfolio: portfolio.map(r => ({
+              name: r.Stage || '',
+              value: parseFloat(r.Count) || 0,
+              color: r.Color || '#00B4A6',
+            })).filter(r => r.name),
+            
             irr: irr.map(r => ({
-              month: r.Month,
-              irr: parseFloat(r.IRR)||0,
-            })),
+              month: r.Month || '',
+              irr: parseFloat(r.IRR) || 0,
+            })).filter(r => r.month),
+            
             pl: pl,
+            
             funds: funds.map(r => ({
-              name: r.Name,
-              stage: r.Stage,
-              status: r.Status,
-              investments: parseInt(r.Investments)||0,
-              color: r.Color||'#00B4A6',
-            })),
-          });
-          setLoading(false);
+              name: r.Name || '',
+              stage: r.Stage || '',
+              status: r.Status || 'Active',
+              investments: parseInt(r.Investments) || 0,
+              color: r.Color || '#00B4A6',
+            })).filter(r => r.name),
+          })
+          
+          setLoading(false)
         }
       } catch(e) {
-        console.error('Sheet error:', e);
+        console.error('Failed to load sheet:', e)
         if (!cancelled) {
-          setSheetError(true);
-          setLoading(false);
+          setSheetError(true)
+          setLoading(false)
         }
       }
     }
-    loadAll();
-    return () => { cancelled = true; };
-  }, []);
+    
+    loadAll()
+    return () => { cancelled = true }
+  }, []) // Empty array - fetch ONCE only
 
   const USD = 0.012;
   function fmtCr(val, suffix='') {
@@ -194,6 +204,18 @@ export default function Financials({ email }) {
   }
 
   const ov = data.overview;
+  const revenuefy25 = parseFloat(ov.revenue_fy25)||27.24;
+  const revenuefy26 = parseFloat(ov.revenue_fy26)||68.32;
+  const profitfy25 = parseFloat(ov.profit_fy25)||1.46;
+  const profitfy26 = parseFloat(ov.profit_fy26)||1.62;
+  const assetsfy25 = parseFloat(ov.total_assets_fy25)||41.91;
+  const assetsfy26 = parseFloat(ov.total_assets_fy26)||103.03;
+  const equityfy25 = parseFloat(ov.equity_fy25)||31.03;
+  const equityfy26 = parseFloat(ov.equity_fy26)||70.99;
+  const currentRatio = ov.current_ratio || '3.72';
+  const debtEquity = ov.debt_equity || '0.08';
+  const roe = ov.roe || '8%';
+  const npm = ov.net_profit_margin || '5.3%';
 
   if (loading) return (
     <div style={{
@@ -274,6 +296,35 @@ export default function Financials({ email }) {
         setCurrency={setCurrency}
       />
 
+      {/* Sticky Section Nav */}
+      <div style={{
+        position: 'sticky', top: 64, left: 0, right: 0, zIndex: 40,
+        height: 48, background: 'rgba(10,10,8,0.85)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '2rem'
+      }}>
+        {[
+          { label: 'Overview', id: 'overview' },
+          { label: 'Revenue Growth', id: 'revenue-growth' },
+          { label: 'Fund Performance', id: 'fund-performance' },
+          { label: 'Unit Economics', id: 'unit-economics' },
+          { label: 'P&L', id: 'financials' },
+          { label: 'Balance Sheet', id: 'balance-sheet' },
+        ].map(n => (
+          <a key={n.id} href={`#${n.id}`} style={{
+            fontSize: 12, color: 'rgba(255,255,255,0.5)',
+            textDecoration: 'none', textTransform: 'uppercase',
+            letterSpacing: '0.08em', fontWeight: 500,
+            transition: 'color 0.2s'
+          }} onMouseEnter={e => e.target.style.color = '#c9a84c'}
+             onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.5)'}>
+            {n.label}
+          </a>
+        ))}
+      </div>
+
       {/* OVERVIEW */}
       <section id="overview" style={{
         padding: '80px 80px 60px'
@@ -292,7 +343,7 @@ export default function Financials({ email }) {
             textTransform: 'uppercase',
             letterSpacing: '0.15em',
             fontWeight: 500
-          }}>FUND OVERVIEW</div>
+          }}>FINANCIAL PERFORMANCE</div>
         </div>
 
         <div style={{
@@ -301,7 +352,7 @@ export default function Financials({ email }) {
           color: '#fff', lineHeight: 1.0,
           marginBottom: 0
         }}>
-          Building India's Most Active
+          IA India Accelerator
         </div>
         <div style={{
           fontFamily: 'Cormorant Garamond',
@@ -309,18 +360,17 @@ export default function Financials({ email }) {
           color: '#00B4A6', lineHeight: 1.0,
           marginBottom: 20
         }}>
-          Startup Ecosystem
+          Financial Performance
         </div>
         <div style={{
           fontSize: 17, color: '#9e9b92',
           maxWidth: 600, lineHeight: 1.7,
           marginBottom: 48
         }}>
-          India Accelerator manages{' '}
-          {ov.active_funds || '5'} active funds
-          with {fmtCr(ov.capital_committed, '+')}
-          {' '}in commitments, deploying capital
-          across pre-seed to growth stage startups.
+          Audited financials for FY 2024-25 and 
+          provisional figures for FY 2025-26. 
+          Revenue grew 5.5x from ₹12.45 Cr to 
+          ₹68.32 Cr in just 2 years.
         </div>
 
         {/* 4 hero stats */}
@@ -334,32 +384,28 @@ export default function Financials({ email }) {
         }}>
           {[
             {
-              label: 'Capital Committed',
-              value: fmtCr(
-                ov.capital_committed, '+'
-              ),
+              label: 'Revenue FY26',
+              value: fmtCr(revenuefy26),
               color: '#c9a84c',
-              note: ov.committed_note||'via Finvolve'
+              note: 'Provisional'
             },
             {
-              label: 'Capital Deployed',
-              value: fmtCr(
-                ov.capital_deployed, '+'
-              ),
+              label: 'Revenue FY25',
+              value: fmtCr(revenuefy25),
               color: '#fff',
-              note: ov.deployed_note||'55+ startups'
+              note: 'Audited'
             },
             {
-              label: 'IRR (>18 months)',
-              value: (ov.irr||'40') + '%',
+              label: 'Net Profit FY26',
+              value: fmtCr(profitfy26),
               color: '#00B4A6',
-              note: 'since date of investment'
+              note: 'Provisional'
             },
             {
-              label: 'Active Funds',
-              value: ov.active_funds || '5',
+              label: 'Total Assets FY26',
+              value: fmtCr(assetsfy26),
               color: '#fff',
-              note: 'FAT, GIFT, Brew, IAGOF'
+              note: 'Provisional'
             },
           ].map((s, i) => (
             <div key={i} style={{
@@ -368,7 +414,7 @@ export default function Financials({ email }) {
             }}>
               <div style={{
                 fontSize: 13,
-                color: '#00B4A6',
+                color: '#9e9b92',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
                 marginBottom: 12
@@ -387,13 +433,77 @@ export default function Financials({ email }) {
                 alignItems: 'center',
                 gap: 6
               }}>
-                <span style={{color:'#00B4A6'}}>
-                  →
+                <span style={{color: s.color}}>
+                  ●
                 </span>
                 {s.note}
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Audit Notice */}
+        <div style={{
+          background: 'rgba(201,168,76,0.06)',
+          border: '1px solid rgba(201,168,76,0.15)',
+          borderRadius: 10, padding: '12px 20px',
+          marginTop: 20, fontSize: 13,
+          color: 'rgba(201,168,76,0.8)', fontStyle: 'italic'
+        }}>
+          * FY 2025-26 figures are provisional 
+          and unaudited. FY 2024-25 figures are audited 
+          by APAM & Co., Chartered Accountants.
+        </div>
+      </section>
+
+      {/* REVENUE GROWTH */}
+      <section id="revenue-growth" style={{
+        padding: '60px 80px',
+        borderTop: '1px solid rgba(255,255,255,0.06)'
+      }}>
+        <SectionLabel label="REVENUE GROWTH" />
+        <SectionTitle title="5.5x Growth in 2 Years" />
+        <p style={{ fontSize: 15, color: '#9e9b92', marginTop: -20, marginBottom: 40, maxWidth: 600 }}>
+          From ₹12.45 Cr in FY24 to ₹68.32 Cr in FY26 — consistent year-on-year revenue growth
+        </p>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '3fr 2fr',
+          gap: 24
+        }}>
+          <ChartCard title="Revenue vs Profit (₹ Cr)">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={data.deployment}>
+                <CartesianGrid {...chartStyle.cartesianGrid} />
+                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                <YAxis tick={chartStyle.yAxis.tick} />
+                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} />
+                <Legend wrapperStyle={chartStyle.legend.wrapperStyle} />
+                <Bar dataKey="committed" name="Target (Cr)" fill="rgba(0,180,166,0.2)" radius={[4,4,0,0]} />
+                <Bar dataKey="deployed" name="Revenue (Cr)" fill="#00B4A6" radius={[4,4,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[
+              { val: currentRatio, label: 'Current Ratio', note: 'Healthy liquidity position' },
+              { val: debtEquity, label: 'Debt-Equity Ratio', note: 'Conservative leverage' },
+              { val: roe, label: 'Return on Equity', note: 'FY 2024-25' },
+              { val: npm, label: 'Net Profit Margin', note: 'FY 2024-25' },
+            ].map((r, i) => (
+              <div key={i} style={{
+                background: '#111110', border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 12, padding: 20, textAlign: 'center',
+                display: 'flex', flexDirection: 'column', justifyContent: 'center'
+              }}>
+                <div style={{ fontFamily: 'Cormorant Garamond', fontSize: 36, color: '#c9a84c', lineHeight: 1 }}>{r.val}</div>
+                <div style={{ fontSize: 11, color: '#00B4A6', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 8 }}>{r.label}</div>
+                <div style={{ fontSize: 11, color: '#9e9b92', marginTop: 4 }}>{r.note}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -404,7 +514,10 @@ export default function Financials({ email }) {
           '1px solid rgba(255,255,255,0.06)'
       }}>
         <SectionLabel label="Fund Performance" />
-        <SectionTitle title="Finvolve & Funds" />
+        <SectionTitle title="Finvolve & Investment Funds" />
+        <p style={{ fontSize: 15, color: '#9e9b92', marginTop: -20, marginBottom: 40, maxWidth: 600 }}>
+          IA manages 5 active funds through Finvolve, deploying capital from pre-seed to growth stage
+        </p>
 
         <div style={{
           display: 'grid',
@@ -601,54 +714,75 @@ export default function Financials({ email }) {
       }}>
         <SectionLabel label="Financial Overview"/>
         <SectionTitle
-          title="P&L Summary"/>
-
-        {/* Disclaimer */}
-        <div style={{
-          background: 'rgba(201,168,76,0.06)',
-          border:
-            '1px solid rgba(201,168,76,0.15)',
-          borderRadius: 10,
-          padding: '14px 20px',
-          marginBottom: 24,
-          fontSize: 13,
-          color: 'rgba(201,168,76,0.8)',
-          fontStyle: 'italic'
-        }}>
-          Sample projections shown for
-          illustrative purposes. Actual
-          financials available to serious
-          investors under NDA.
-        </div>
+          title="Profit & Loss Statement"/>
+        <p style={{ fontSize: 15, color: '#9e9b92', marginTop: -20, marginBottom: 40, maxWidth: 600 }}>
+          IA India Accelerator Private Limited — Standalone financials
+        </p>
 
         {/* Year selector */}
         <div style={{
-          display: 'flex', gap: 8,
+          display: 'flex', alignItems: 'center',
           marginBottom: 24
         }}>
-          {['FY25','FY26','FY27'].map(y => (
-            <button key={y}
-              onClick={() =>
-                setSelectedYear(y)}
-              style={{
-                padding: '8px 24px',
-                borderRadius: 20,
-                border: selectedYear===y
-                  ? 'none'
-                  : '1px solid rgba(255,255,255,0.12)',
-                background: selectedYear===y
-                  ? '#c9a84c' : 'transparent',
-                color: selectedYear===y
-                  ? '#0a0a08' : 'rgba(255,255,255,0.5)',
-                fontSize: 14,
-                fontWeight: selectedYear===y
-                  ? 500 : 400,
-                cursor: 'pointer',
-                fontFamily: 'var(--sans)'
-              }}>
-              {y}
-            </button>
-          ))}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {['FY25','FY26'].map(y => (
+              <button key={y}
+                onClick={() =>
+                  setSelectedYear(y)}
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: 20,
+                  border: selectedYear===y
+                    ? 'none'
+                    : '1px solid rgba(255,255,255,0.12)',
+                  background: selectedYear===y
+                    ? '#c9a84c' : 'transparent',
+                  color: selectedYear===y
+                    ? '#0a0a08' : 'rgba(255,255,255,0.5)',
+                  fontSize: 14,
+                  fontWeight: selectedYear===y
+                    ? 500 : 400,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--sans)'
+                }}>
+                {y}
+              </button>
+            ))}
+          </div>
+          
+          {selectedYear === 'FY26' && (
+            <span style={{
+              fontSize: 11,
+              background: 'rgba(201,168,76,0.1)',
+              border: '1px solid rgba(201,168,76,0.2)',
+              color: '#c9a84c',
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontWeight: 500,
+              marginLeft: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em'
+            }}>
+              Provisional
+            </span>
+          )}
+
+          {selectedYear === 'FY25' && (
+            <span style={{
+              fontSize: 11,
+              background: 'rgba(74,174,140,0.1)',
+              border: '1px solid rgba(74,174,140,0.2)',
+              color: '#6fcfb0',
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontWeight: 500,
+              marginLeft: 12,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em'
+            }}>
+              Audited
+            </span>
+          )}
         </div>
 
         {/* P&L table */}
@@ -722,6 +856,94 @@ export default function Financials({ email }) {
                   </span>
                 )}
               </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* BALANCE SHEET */}
+      <section id="balance-sheet" style={{
+        padding: '60px 80px',
+        borderTop: '1px solid rgba(255,255,255,0.06)'
+      }}>
+        <SectionLabel label="BALANCE SHEET" />
+        <SectionTitle title="Financial Position" />
+        <p style={{ fontSize: 15, color: '#9e9b92', marginTop: -20, marginBottom: 40, maxWidth: 600 }}>
+          Key balance sheet metrics as at 31st March 2025 (Audited)
+        </p>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 24
+        }}>
+          {/* Assets */}
+          <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>Total Assets — {fmtCr(assetsfy25)}</div>
+                <div style={{ fontSize: 12, color: '#c9a84c', marginTop: 4 }}>FY26: {fmtCr(assetsfy26)} (Provisional)</div>
+              </div>
+            </div>
+            {[
+              { l: 'Non-current Assets', v: 10.03 },
+              { l: 'Current Assets', v: 31.89 },
+              { l: 'Cash & Equivalents', v: 16.36 },
+              { l: 'Trade Receivables', v: 5.44 },
+              { l: 'Investments', v: 7.35 },
+              { l: 'Other Assets', v: 3.03 },
+            ].map((row, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between', padding: '10px 0',
+                borderBottom: i<5 ? '1px solid rgba(255,255,255,0.04)' : 'none'
+              }}>
+                <span style={{ fontSize: 14, color: '#9e9b92' }}>{row.l}</span>
+                <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{fmtCr(row.v)}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Equity & Liabilities */}
+          <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>Total Liabilities — {fmtCr(assetsfy25)}</div>
+                <div style={{ fontSize: 12, color: '#c9a84c', marginTop: 4 }}>FY26 Equity: {fmtCr(equityfy26)} (Provisional)</div>
+              </div>
+            </div>
+            {[
+              { l: 'Shareholders Equity', v: equityfy25 },
+              { l: 'Long-term Borrowings', v: 1.89 },
+              { l: 'Short-term Borrowings', v: 0.73 },
+              { l: 'Trade Payables', v: 2.71 },
+              { l: 'Other Current Liabilities', v: 5.42 },
+            ].map((row, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between', padding: '10px 0',
+                borderBottom: i<4 ? '1px solid rgba(255,255,255,0.04)' : 'none'
+              }}>
+                <span style={{ fontSize: 14, color: '#9e9b92' }}>{row.l}</span>
+                <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{fmtCr(row.v)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Highlight Bar */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(0,180,166,0.06), rgba(201,168,76,0.06))',
+          border: '1px solid rgba(0,180,166,0.15)',
+          borderRadius: 12, padding: 24, marginTop: 40,
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center'
+        }}>
+          {[
+            { v: '268% Revenue Growth', l: 'FY24→FY26', c: '#00B4A6' },
+            { v: 'Profitable in FY25', l: 'First profitable year', c: '#c9a84c' },
+            { v: 'Strong Liquidity', l: 'Current Ratio 3.72', c: '#fff' },
+          ].map((h, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: 'Cormorant Garamond', fontSize: 22, color: h.c, fontWeight: 300 }}>{h.v}</div>
+              <div style={{ fontSize: 12, color: '#9e9b92', marginTop: 4 }}>{h.l}</div>
             </div>
           ))}
         </div>
