@@ -206,7 +206,7 @@ export default function Financials({ email }) {
   const ov = data.overview;
   const revenuefy25 = parseFloat(ov.revenue_fy25)||27.24;
   const revenuefy26 = parseFloat(ov.revenue_fy26)||68.32;
-  const profitfy25 = parseFloat(ov.profit_fy25)||1.46;
+  // const profitfy25 = parseFloat(ov.profit_fy25)||1.46;
   const profitfy26 = parseFloat(ov.profit_fy26)||1.62;
   const assetsfy25 = parseFloat(ov.total_assets_fy25)||41.91;
   const assetsfy26 = parseFloat(ov.total_assets_fy26)||103.03;
