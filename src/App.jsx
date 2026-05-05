@@ -12,6 +12,7 @@ import Financials from './pages/portal/Financials';
 import PresencePage from './pages/portal/PresencePage';
 import ProgramsPage from './pages/portal/ProgramsPage';
 import ThesesPage from './pages/portal/ThesesPage';
+import EcosystemDetail from './pages/portal/EcosystemDetail';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminShell from './pages/admin/AdminShell';
 import { ToastProvider } from './components/UI';
@@ -141,6 +142,12 @@ export default function App() {
 
         <Route path="/financials" element={investorEmail ? <Financials email={investorEmail} /> : <Navigate to="/" replace />} />
         <Route path="/presence" element={investorEmail ? <PresencePage email={investorEmail} /> : <Navigate to="/" replace />} />
+
+        <Route path="/ecosystem/:key" element={
+          investorEmail
+            ? <EcosystemDetail email={investorEmail} />
+            : <Navigate to="/" replace />
+        } />
 
         <Route path="/programs" element={
           investorEmail

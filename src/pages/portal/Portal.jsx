@@ -3,14 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Badge, Dots } from '../../components/UI';
 
-
-
-
-
 function cleanDescription(section) {
   const desc = section.description || ''
-  
-  // Never show URLs as descriptions
   if (
     desc.includes('http') ||
     desc.includes('https') ||
@@ -35,29 +29,55 @@ function cleanDescription(section) {
   return desc
 }
 
+// SVG Math Helpers
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad)
+  }
+}
+
+function segmentPath(cx, cy, r1, r2, startAngle, endAngle) {
+  const s1 = polarToCartesian(cx, cy, r1, startAngle)
+  const e1 = polarToCartesian(cx, cy, r1, endAngle)
+  const s2 = polarToCartesian(cx, cy, r2, startAngle)
+  const e2 = polarToCartesian(cx, cy, r2, endAngle)
+  return [
+    `M ${s1.x} ${s1.y}`,
+    `A ${r1} ${r1} 0 0 1 ${e1.x} ${e1.y}`,
+    `L ${e2.x} ${e2.y}`,
+    `A ${r2} ${r2} 0 0 0 ${s2.x} ${s2.y}`,
+    'Z'
+  ].join(' ')
+}
+
 export default function Portal({ email, onSignOut }) {
   const navigate = useNavigate();
   const [sections, setSections]   = useState([]);
   const [content, setContent]     = useState({});
+  const [ecosystem, setEcosystem] = useState([]);
   const [loading, setLoading]     = useState(true);
+  const [hoveredSegment, setHoveredSegment] = useState(null);
 
   useEffect(() => {
     loadAll();
   }, []);
 
   async function loadAll() {
-    const [secRes, conRes] = await Promise.all([
+    const [secRes, conRes, ecoRes] = await Promise.all([
       supabase.from('portal_sections').select('*').eq('is_visible', true).order('sort_order'),
-      supabase.from('content_blocks')
-        .select('block_key, value')
-        .eq('section_key', 'hero'),
+      supabase.from('content_blocks').select('block_key, value').eq('section_key', 'hero'),
+      supabase.from('ecosystem_verticals').select('key, title, color, stats, is_visible').eq('is_visible', true).order('sort_order')
     ]);
+    
     setSections(secRes.data || []);
-    // Build content map: { section_key: { block_key: value } }
+    setEcosystem(ecoRes.data || []);
+    
     const map = {};
     (conRes.data || []).forEach(b => {
-      if (!map[b.section_key]) map[b.section_key] = {};
-      map[b.section_key][b.block_key] = b.value;
+      if (!map['hero']) map['hero'] = {};
+      map['hero'][b.block_key] = b.value;
     });
     setContent(map);
     setLoading(false);
@@ -72,27 +92,19 @@ export default function Portal({ email, onSignOut }) {
 
     const type = section.section_type || section.key;
 
-    if (type === 'pitch_deck' || 
-        section.key === 'pitch_deck') {
+    if (type === 'pitch_deck' || section.key === 'pitch_deck') {
       navigate('/deck');
-    } else if (type === 'team' || 
-               section.key === 'team') {
+    } else if (type === 'team' || section.key === 'team') {
       navigate('/team');
-    } else if (type === 'portfolio' || 
-               section.key === 'portfolio') {
+    } else if (type === 'portfolio' || section.key === 'portfolio') {
       navigate('/portfolio');
-    } else if (type === 'financials' || 
-               section.key === 'financials') {
+    } else if (type === 'financials' || section.key === 'financials') {
       navigate('/financials');
-    } else if (type === 'programs' || 
-               section.key === 'programs') {
+    } else if (type === 'programs' || section.key === 'programs') {
       navigate('/programs');
-    } else if (type === 'theses' || 
-               section.key === 'theses') {
+    } else if (type === 'theses' || section.key === 'theses') {
       navigate('/theses');
-    } else if (type === 'presence' || 
-               section.key === 'presence' ||
-               section.title?.toLowerCase().includes('presence')) {
+    } else if (type === 'presence' || section.key === 'presence' || section.title?.toLowerCase().includes('presence')) {
       navigate('/presence');
     }
   }
@@ -101,9 +113,22 @@ export default function Portal({ email, onSignOut }) {
   const fin     = content['financials'] || {};
   const gridSec = sections.filter(s => s.key !== 'hero');
 
+  // Wheel configuration
+  const wheelConfig = [
+    { key: 'finvolve', startAngle: 270, color: '#00B4A6' },
+    { key: 'iangels',  startAngle: 330, color: '#c9a84c' },
+    { key: 'spaces',   startAngle: 30,  color: '#00B4A6' },
+    { key: 'vas',      startAngle: 90,  color: '#4aae8c' },
+    { key: 'programs', startAngle: 150, color: '#00B4A6' },
+    { key: 'thesis',   startAngle: 210, color: '#c9a84c' }
+  ];
 
+  const activeVerticals = wheelConfig.map(conf => {
+    const data = ecosystem.find(v => v.key === conf.key);
+    return data ? { ...conf, ...data } : null;
+  }).filter(v => v);
 
-
+  const hoveredData = activeVerticals.find(v => v.key === hoveredSegment);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -174,6 +199,137 @@ export default function Portal({ email, onSignOut }) {
 
             {/* Divider */}
             <div style={{ height: 1, background: 'var(--border)', maxWidth: 1200, margin: '0 auto' }} />
+
+            {/* ── ECOSYSTEM WHEEL ── */}
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 4rem 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                  <span style={{ width: 32, height: 1, background: 'var(--gold)', display: 'block' }} />
+                  IA ECOSYSTEM
+                </div>
+                <h2 style={{ fontFamily: 'var(--serif)', fontSize: 42, fontWeight: 300, color: '#fff', marginBottom: 12 }}>The IA Ecosystem</h2>
+                <p style={{ fontSize: 15, color: '#9e9b92', maxWidth: 500, margin: '12px auto 0' }}>Six interconnected verticals powering India's startup ecosystem</p>
+              </div>
+
+              <div style={{ position: 'relative' }}>
+                <svg viewBox="0 0 600 600" style={{ width: '100%', maxWidth: 560, display: 'block', margin: '0 auto', overflow: 'visible' }}>
+                  {/* Center Circle */}
+                  <circle cx={300} cy={300} r={80} fill="#111110" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+                  <foreignObject
+                    x={235}
+                    y={255}
+                    width={130}
+                    height={90}
+                  >
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <img
+                        src="/images/logos/ialogo.jpeg"
+                        alt="India Accelerator"
+                        style={{
+                          width: '90px',
+                          height: 'auto',
+                          objectFit: 'contain',
+                          filter: 'brightness(1.1)',
+                        }}
+                      />
+                    </div>
+                  </foreignObject>
+
+                  {/* Segments */}
+                  {activeVerticals.map(seg => {
+                    const midAngle = seg.startAngle + 29;
+                    const midPointLabel = polarToCartesian(300, 300, 148, midAngle);
+                    const midPointStat = polarToCartesian(300, 300, 240, midAngle);
+                    const firstStat = seg.stats?.[0] || {};
+
+                    return (
+                      <g key={seg.key}>
+                        {/* Outer Ring Background */}
+                        <path
+                          d={segmentPath(300, 300, 212, 268, seg.startAngle, seg.startAngle + 58)}
+                          fill="rgba(255,255,255,0.03)"
+                          stroke="#0a0a08"
+                          strokeWidth={2}
+                        />
+
+                        {/* Outer Stat Text */}
+                        <text x={midPointStat.x} y={midPointStat.y - 4} textAnchor="middle" fontSize={14} fill="#c9a84c" fontFamily="'Cormorant Garamond', serif" fontWeight={300}>
+                          {firstStat.value}
+                        </text>
+                        <text x={midPointStat.x} y={midPointStat.y + 12} textAnchor="middle" fontSize={9} fill="#9e9b92" fontFamily="'DM Sans', sans-serif" textTransform="uppercase" letterSpacing={0.5}>
+                          {firstStat.label}
+                        </text>
+
+                        {/* Inner Clickable Segment */}
+                        <path
+                          d={segmentPath(300, 300, 90, 200, seg.startAngle, seg.startAngle + 58)}
+                          fill={hoveredSegment === seg.key ? seg.color : seg.color + '99'}
+                          stroke="#0a0a08"
+                          strokeWidth={2}
+                          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+                          onMouseEnter={() => setHoveredSegment(seg.key)}
+                          onMouseLeave={() => setHoveredSegment(null)}
+                          onClick={() => navigate(`/ecosystem/${seg.key}`)}
+                        />
+
+                        {/* Segment Label */}
+                        <text
+                          x={midPointLabel.x} y={midPointLabel.y}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fill="white"
+                          fontSize={12}
+                          fontFamily="'DM Sans', sans-serif"
+                          fontWeight={600}
+                          style={{ pointerEvents: 'none' }}
+                          transform={`rotate(${midAngle + (midAngle > 90 && midAngle < 270 ? 180 : 0)}, ${midPointLabel.x}, ${midPointLabel.y})`}
+                        >
+                          {seg.title}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Hover Tooltip */}
+                <div style={{
+                  background: '#111110',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 12, padding: '20px 24px',
+                  marginTop: 32, maxWidth: 400, margin: '32px auto 0',
+                  textAlign: 'center',
+                  opacity: hoveredSegment ? 1 : 0,
+                  transform: hoveredSegment ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  pointerEvents: 'none',
+                  minHeight: 120
+                }}>
+                  {hoveredData && (
+                    <>
+                      <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 12 }}>{hoveredData.title}</div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 16 }}>
+                        {(hoveredData.stats || []).slice(0, 3).map((s, i) => (
+                          <div key={i}>
+                            <div style={{ fontSize: 16, color: '#c9a84c', fontFamily: 'var(--serif)' }}>{s.value}</div>
+                            <div style={{ fontSize: 9, color: '#9e9b92', textTransform: 'uppercase' }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 13, color: '#00B4A6', fontWeight: 500 }}>Click to explore →</div>
+                    </>
+                  )}
+                  {!hoveredData && (
+                    <div style={{ color: '#555', fontSize: 13, paddingTop: 30 }}>Hover over a vertical to see details</div>
+                  )}
+                </div>
+              </div>
+            </section>
 
             {/* ── Materials Grid ── */}
             <section style={{ maxWidth: 1200, margin: '0 auto', padding: '5rem 4rem' }}>
@@ -265,4 +421,3 @@ function MaterialCard({ section, onView }) {
     </div>
   );
 }
-
