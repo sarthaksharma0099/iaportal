@@ -214,7 +214,7 @@ export default function EcosystemDetail() {
       )}
 
       {/* RELATED DATA SECTION */}
-      {relatedData.length > 0 && key !== 'spaces' && (
+      {relatedData.length > 0 && key !== 'spaces' && key !== 'iangels' && (
         <div style={{ padding: '60px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>EXPLORE</div>
           <h2 style={{ fontSize: 32, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, marginBottom: 40 }}>
@@ -266,16 +266,7 @@ export default function EcosystemDetail() {
             </div>
           )}
 
-          {key === 'iangels' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-              {relatedData.map((s, i) => (
-                <div key={i} style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 24 }}>
-                  <div style={{ fontSize: 24, color: '#c9a84c' }}>{s.value}</div>
-                  <div style={{ fontSize: 12, color: '#9e9b92', marginTop: 4 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          )}
+
 
           {key === 'vas' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 20 }}>
