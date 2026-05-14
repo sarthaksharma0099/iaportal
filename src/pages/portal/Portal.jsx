@@ -168,11 +168,11 @@ export default function Portal({ email, onSignOut }) {
                 <span style={{ width: 32, height: 1, background: 'var(--gold)', display: 'block' }} />
                 {hero.stage || 'Investor Materials'}
               </div>
-              <h1 className="fade-up d1" style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(48px,7vw,86px)', fontWeight: 300, lineHeight: 1.0, color: '#fff', marginBottom: '1rem', letterSpacing: '-0.01em' }}>
+              <h1 className="fade-up d1" style={{ fontFamily: 'var(--serif)', fontSize: '96px', fontWeight: 300, lineHeight: 0.9, color: '#fff', marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
                 {hero.fund_name || 'India Accelerator'}<br />
-                <em style={{ color: 'var(--gold)', fontStyle: 'italic' }}>{hero.tagline_short || 'Investor Portal'}</em>
+                <em style={{ color: 'var(--gold)', fontStyle: 'italic', fontSize: '96px' }}>{hero.tagline_short || 'Investor Portal'}</em>
               </h1>
-              <p className="fade-up d2" style={{ fontSize: 17, color: 'var(--text2)', maxWidth: 520, lineHeight: 1.7, marginBottom: '3.5rem' }}>
+              <p className="fade-up d2" style={{ fontSize: 22, color: 'var(--text2)', maxWidth: 650, lineHeight: 1.6, marginBottom: '4rem' }}>
                 {hero.tagline || 'Building the next generation of Indian founders.'}
               </p>
 
@@ -189,8 +189,23 @@ export default function Portal({ email, onSignOut }) {
                   { v: hero.stat3_value || '318',    l: hero.stat3_label || 'Pipeline' },
                   { v: hero.stat4_value || '6',      l: hero.stat4_label || 'Theses' },
                 ].map((s, i) => (
-                  <div key={i} style={{ background: 'var(--bg2)', padding: '1.75rem 1.5rem' }}>
-                    <div style={{ fontFamily: 'var(--serif)', fontSize: 36, fontWeight: 300, color: '#fff', lineHeight: 1, marginBottom: 6 }}>{s.v}</div>
+                  <div key={i} style={{ 
+                    background: 'var(--bg2)', 
+                    padding: '1.75rem 1.25rem',
+                    minWidth: 0,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      fontFamily: 'var(--serif)', 
+                      fontSize: 36, 
+                      fontWeight: 300, 
+                      color: '#fff', 
+                      lineHeight: 1, 
+                      marginBottom: 6,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>{s.v}</div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.l}</div>
                   </div>
                 ))}
@@ -211,7 +226,10 @@ export default function Portal({ email, onSignOut }) {
                 <p style={{ fontSize: 15, color: '#9e9b92', maxWidth: 500, margin: '12px auto 0' }}>Six interconnected verticals powering India's startup ecosystem</p>
               </div>
 
-              <div style={{ position: 'relative' }}>
+              <div 
+                style={{ position: 'relative' }}
+                onMouseLeave={() => setHoveredSegment(null)}
+              >
                 <svg viewBox="0 0 600 600" style={{ width: '100%', maxWidth: 560, display: 'block', margin: '0 auto', overflow: 'visible' }}>
                   {/* Center Circle */}
                   <circle cx={300} cy={300} r={80} fill="#111110" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
@@ -274,7 +292,6 @@ export default function Portal({ email, onSignOut }) {
                           strokeWidth={2}
                           style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
                           onMouseEnter={() => setHoveredSegment(seg.key)}
-                          onMouseLeave={() => setHoveredSegment(null)}
                           onClick={() => navigate(`/ecosystem/${seg.key}`)}
                         />
 
@@ -298,30 +315,44 @@ export default function Portal({ email, onSignOut }) {
                 </svg>
 
                 {/* Hover Tooltip */}
-                <div style={{
-                  background: '#111110',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 12, padding: '20px 24px',
-                  marginTop: 32, maxWidth: 400, margin: '32px auto 0',
-                  textAlign: 'center',
-                  opacity: hoveredSegment ? 1 : 0,
-                  transform: hoveredSegment ? 'translateY(0)' : 'translateY(10px)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  pointerEvents: 'none',
-                  minHeight: 120
-                }}>
+                <div 
+                  onClick={() => hoveredSegment && navigate(`/ecosystem/${hoveredSegment}`)}
+                  style={{
+                    background: '#111110',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 16,
+                    padding: '24px 32px',
+                    marginTop: 16,
+                    maxWidth: 500,
+                    margin: '16px auto 0',
+                    textAlign: 'center',
+                    transition: 'all 0.25s ease',
+                    opacity: hoveredSegment ? 1 : 0,
+                    transform: hoveredSegment ? 'translateY(0)' : 'translateY(8px)',
+                    pointerEvents: hoveredSegment ? 'auto' : 'none',
+                    cursor: 'pointer',
+                  }}
+                >
                   {hoveredData && (
                     <>
-                      <div style={{ fontSize: 18, fontWeight: 500, color: '#fff', marginBottom: 12 }}>{hoveredData.title}</div>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 16 }}>
+                      <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, color: '#fff', marginBottom: 16 }}>
+                        {hoveredData.title}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
                         {(hoveredData.stats || []).slice(0, 3).map((s, i) => (
                           <div key={i}>
-                            <div style={{ fontSize: 16, color: '#c9a84c', fontFamily: 'var(--serif)' }}>{s.value}</div>
-                            <div style={{ fontSize: 9, color: '#9e9b92', textTransform: 'uppercase' }}>{s.label}</div>
+                            <div style={{ fontSize: 24, color: '#c9a84c', fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
+                              {s.value}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 4 }}>
+                              {s.label}
+                            </div>
                           </div>
                         ))}
                       </div>
-                      <div style={{ fontSize: 13, color: '#00B4A6', fontWeight: 500 }}>Click to explore →</div>
+                      <div style={{ fontSize: 13, color: '#00B4A6', marginTop: 16, fontFamily: "'DM Sans', sans-serif" }}>
+                        Click to explore →
+                      </div>
                     </>
                   )}
                   {!hoveredData && (
