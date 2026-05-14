@@ -116,6 +116,8 @@ export default function Financials({ email }) {
   const [forecastsData, setForecastsData] = useState({});
   const [sections, setSections] = useState({});
   const [projectionsData, setProjectionsData] = useState([]);
+  const [revenueSubtitle, setRevenueSubtitle] = 
+    useState('From ₹3.9 Cr in FY21 to ₹35.5 Cr in FY25 — and projecting ₹964 Cr by FY30')
 
   function isVisible(key) {
     if (!sections || Object.keys(sections).length === 0) {
@@ -138,6 +140,17 @@ export default function Financials({ email }) {
             map[s.key] = s.is_visible
           })
           setSections(map)
+        }
+
+        const { data: subtitleData } = 
+          await supabase
+            .from('content_blocks')
+            .select('value')
+            .eq('block_key', 'financials_revenue_subtitle')
+            .single()
+
+        if (subtitleData) {
+          setRevenueSubtitle(subtitleData.value)
         }
       } catch(err) {
         console.error('Sections fetch failed:', err)
@@ -591,35 +604,41 @@ export default function Financials({ email }) {
           <div style={{ fontSize: 13, color: '#c9a84c', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500 }}>REVENUE TRAJECTORY</div>
         </div>
         <h2 style={{ fontSize: 42, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, color: '#fff', marginBottom: 8 }}>Revenue Growth Story</h2>
-        <p style={{ fontSize: 15, color: '#9e9b92', marginBottom: 40 }}>From ₹3.9 Cr in FY21 to ₹35.5 Cr in FY25 — and projecting ₹964 Cr by FY30</p>
+        <p style={{ fontSize: 15, color: '#9e9b92', marginBottom: 40 }}>{revenueSubtitle}</p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <ChartCard title="Revenue Growth (In INR Cr)">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={(data.deployment||[]).filter(r => ['FY21','FY22','FY23','FY24','FY25'].includes(r.year))}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <YAxis tick={chartStyle.yAxis.tick} />
-                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
-                <Bar dataKey="revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={280} style={{ overflow: 'visible' }}>
+                <BarChart data={(data.deployment||[]).filter(r => ['FY21','FY22','FY23','FY24','FY25'].includes(r.year))}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <YAxis tick={chartStyle.yAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                  <Bar dataKey="revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
 
           <ChartCard title="Projected Revenue Growth (In INR Cr)">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={projectionsData.map(r => ({ year: r.year, revenue: r.revenue }))}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <YAxis tick={chartStyle.yAxis.tick} />
-                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
-                <Bar dataKey="revenue" name="Projected Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={280} style={{ overflow: 'visible' }}>
+                <BarChart data={projectionsData.map(r => ({ year: r.year, revenue: r.revenue }))}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <YAxis tick={chartStyle.yAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                  <Bar dataKey="revenue" name="Projected Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <div style={{ fontSize: 11, color: '#9e9b92', fontStyle: 'italic', marginTop: 12 }}>* FY26 onwards are projections</div>
           </ChartCard>
         </div>
@@ -646,48 +665,57 @@ export default function Financials({ email }) {
           {/* Chart 1: Total Cities & Hubs */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Cities & Hubs</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <Legend wrapperStyle={chartStyle.legend.wrapperStyle} />
-                <Bar dataKey="cities" name="Cities" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="cities" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
-                </Bar>
-                <Bar dataKey="hubs" name="Hubs" fill="rgba(0,180,166,0.4)" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="hubs" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Legend wrapperStyle={chartStyle.legend.wrapperStyle} />
+                  <Bar dataKey="cities" name="Cities" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="cities" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                  <Bar dataKey="hubs" name="Hubs" fill="rgba(0,180,166,0.4)" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="hubs" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Chart 2: Total Seats */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Seats (In 000's)</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <Bar dataKey="seats" name="Seats (000s)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="seats" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Bar dataKey="seats" name="Seats (000s)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="seats" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Chart 3: IA Spaces Revenue */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>IA Spaces Revenue (₹ Cr)</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
-                <Bar dataKey="spaces_revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="spaces_revenue" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} formatter={(val) => fmtCr(val)} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                  <Bar dataKey="spaces_revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="spaces_revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} formatter={(val) => fmtCr(val)} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -698,28 +726,34 @@ export default function Financials({ email }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Startups Added</div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
-                    <CartesianGrid {...chartStyle.cartesianGrid} />
-                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                    <Bar dataKey="startups_added" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="startups_added" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflow: 'visible' }}>
+                  <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                    <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}
+                      margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid {...chartStyle.cartesianGrid} />
+                      <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                      <Bar dataKey="startups_added" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="startups_added" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Value of Equity Added (₹ Cr)</div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
-                    <CartesianGrid {...chartStyle.cartesianGrid} />
-                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                    <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
-                    <Bar dataKey="equity_value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="equity_value" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} formatter={(val) => fmtCr(val)} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflow: 'visible' }}>
+                  <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                    <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}
+                      margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid {...chartStyle.cartesianGrid} />
+                      <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                      <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                      <Bar dataKey="equity_value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="equity_value" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} formatter={(val) => fmtCr(val)} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
@@ -729,16 +763,19 @@ export default function Financials({ email }) {
             <div style={{ fontSize: 11, color: '#c9a84c', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>FUND (EXCLUDING CARRY)</div>
             <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>IA Share from Fund (₹ Cr)</div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
-                  <CartesianGrid {...chartStyle.cartesianGrid} />
-                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
-                  <Bar dataKey="ia_fund_share" fill="#c9a84c" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="ia_fund_share" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} formatter={(val) => fmtCr(val)} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{ overflow: 'visible' }}>
+                <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                  <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}
+                    margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                    <CartesianGrid {...chartStyle.cartesianGrid} />
+                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                    <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                    <Bar dataKey="ia_fund_share" fill="#c9a84c" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="ia_fund_share" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} formatter={(val) => fmtCr(val)} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
@@ -763,28 +800,31 @@ export default function Financials({ email }) {
           gap: 24
         }}>
           <ChartCard title="Revenue vs Profit (₹ Cr)">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={safeDeployment}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <YAxis 
-                  tick={chartStyle.yAxis.tick}
-                  label={{ value: '₹ Cr', angle: -90, position: 'insideLeft', fill: 'rgba(255,255,255,0.4)', fontSize: 10, offset: 10 }}
-                />
-                <Tooltip 
-                  contentStyle={chartStyle.tooltip.contentStyle}
-                  formatter={(val) => fmtCr(val)}
-                />
-                <Legend 
-                  wrapperStyle={chartStyle.legend.wrapperStyle}
-                  verticalAlign="bottom"
-                  align="center"
-                />
-                <Bar dataKey="revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4,4,0,0]} />
-                <Bar dataKey="profit" name="Net Profit (Cr)" fill="#c9a84c" radius={[4,4,0,0]} />
-                <Bar dataKey="target" name="Target (Cr)" fill="rgba(255,255,255,0.08)" radius={[4,4,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={280} style={{ overflow: 'visible' }}>
+                <BarChart data={safeDeployment}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <YAxis 
+                    tick={chartStyle.yAxis.tick}
+                    label={{ value: '₹ Cr', angle: -90, position: 'insideLeft', fill: 'rgba(255,255,255,0.4)', fontSize: 10, offset: 10 }}
+                  />
+                  <Tooltip 
+                    contentStyle={chartStyle.tooltip.contentStyle}
+                    formatter={(val) => fmtCr(val)}
+                  />
+                  <Legend 
+                    wrapperStyle={chartStyle.legend.wrapperStyle}
+                    verticalAlign="bottom"
+                    align="center"
+                  />
+                  <Bar dataKey="revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4,4,0,0]} />
+                  <Bar dataKey="profit" name="Net Profit (Cr)" fill="#c9a84c" radius={[4,4,0,0]} />
+                  <Bar dataKey="target" name="Target (Cr)" fill="rgba(255,255,255,0.08)" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -828,35 +868,38 @@ export default function Financials({ email }) {
           gap: 24, marginBottom: 32
         }}>
           <ChartCard title="Capital Deployment (₹ Cr)">
-            <ResponsiveContainer
-              width="100%" height={280}>
-              <BarChart data={fundDeploymentData}>
-                <CartesianGrid
-                  {...chartStyle.cartesianGrid}/>
-                <XAxis dataKey="year"
-                  tick={chartStyle.xAxis.tick}/>
-                <YAxis
-                  tick={chartStyle.yAxis.tick}/>
-                <Tooltip
-                  contentStyle={
-                    chartStyle.tooltip.contentStyle
-                  }
-                  formatter={(val) => fmtCr(val)}
-                />
-                <Legend
-                  wrapperStyle={
-                    chartStyle.legend.wrapperStyle
-                  }/>
-                <Bar dataKey="committed"
-                  name="Committed"
-                  fill="rgba(0,180,166,0.2)"
-                  radius={[4,4,0,0]}/>
-                <Bar dataKey="deployed"
-                  name="Deployed"
-                  fill="#00B4A6"
-                  radius={[4,4,0,0]}/>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer
+                width="100%" height={280} style={{ overflow: 'visible' }}>
+                <BarChart data={fundDeploymentData}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid
+                    {...chartStyle.cartesianGrid}/>
+                  <XAxis dataKey="year"
+                    tick={chartStyle.xAxis.tick}/>
+                  <YAxis
+                    tick={chartStyle.yAxis.tick}/>
+                  <Tooltip
+                    contentStyle={
+                      chartStyle.tooltip.contentStyle
+                    }
+                    formatter={(val) => fmtCr(val)}
+                  />
+                  <Legend
+                    wrapperStyle={
+                      chartStyle.legend.wrapperStyle
+                    }/>
+                  <Bar dataKey="committed"
+                    name="Committed"
+                    fill="rgba(0,180,166,0.2)"
+                    radius={[4,4,0,0]}/>
+                  <Bar dataKey="deployed"
+                    name="Deployed"
+                    fill="#00B4A6"
+                    radius={[4,4,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </ChartCard>
 
           <ChartCard
@@ -1298,50 +1341,59 @@ export default function Financials({ email }) {
           {/* Chart 1: Cities & Hubs */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Cities & Hubs</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={forecastSeriesDual('cities', 'hubs')}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} />
-                <Legend wrapperStyle={chartStyle.legend.wrapperStyle} verticalAlign="bottom" />
-                <Bar dataKey="value1" name="Cities" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="value1" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                </Bar>
-                <Bar dataKey="value2" name="Hubs" fill="rgba(0,180,166,0.35)" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="value2" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={220} style={{ overflow: 'visible' }}>
+                <BarChart data={forecastSeriesDual('cities', 'hubs')}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} />
+                  <Legend wrapperStyle={chartStyle.legend.wrapperStyle} verticalAlign="bottom" />
+                  <Bar dataKey="value1" name="Cities" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="value1" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                  <Bar dataKey="value2" name="Hubs" fill="rgba(0,180,166,0.35)" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="value2" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Chart 2: Total Seats */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Seats (In 000's)</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={forecastSeries('seats')}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} />
-                <Bar dataKey="value" name="Seats (000s)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="value" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={220} style={{ overflow: 'visible' }}>
+                <BarChart data={forecastSeries('seats')}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} />
+                  <Bar dataKey="value" name="Seats (000s)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="value" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Chart 3: Rental Revenue */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Rental Revenue (₹ Cr)</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={forecastSeries('rental_revenue')}>
-                <CartesianGrid {...chartStyle.cartesianGrid} />
-                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
-                <Bar dataKey="value" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ overflow: 'visible' }}>
+              <ResponsiveContainer width="100%" height={220} style={{ overflow: 'visible' }}>
+                <BarChart data={forecastSeries('rental_revenue')}
+                  margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                  <Bar dataKey="value" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -1363,41 +1415,50 @@ export default function Financials({ email }) {
               {/* Startup Added */}
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 12 }}>Startups Added</div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={forecastSeries('startups_added')}>
-                    <CartesianGrid {...chartStyle.cartesianGrid} />
-                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                    <Bar dataKey="value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="value" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflow: 'visible' }}>
+                  <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                    <BarChart data={forecastSeries('startups_added')}
+                      margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid {...chartStyle.cartesianGrid} />
+                      <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                      <Bar dataKey="value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="value" position="top" style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
               {/* Equity Value */}
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 12 }}>Equity Value (₹ Cr)</div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={forecastSeries('equity_value')}>
-                    <CartesianGrid {...chartStyle.cartesianGrid} />
-                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                    <Bar dataKey="value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflow: 'visible' }}>
+                  <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                    <BarChart data={forecastSeries('equity_value')}
+                      margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid {...chartStyle.cartesianGrid} />
+                      <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                      <Bar dataKey="value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
               {/* CoE Rev */}
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 12 }}>CoE Revenue (₹ Cr)</div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={forecastSeries('support_coe_rev')}>
-                    <CartesianGrid {...chartStyle.cartesianGrid} />
-                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                    <Bar dataKey="value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflow: 'visible' }}>
+                  <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                    <BarChart data={forecastSeries('support_coe_rev')}
+                      margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid {...chartStyle.cartesianGrid} />
+                      <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                      <Bar dataKey="value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
@@ -1412,15 +1473,18 @@ export default function Financials({ email }) {
             }}>FUND (EXCLUDING CARRY)</div>
             <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 12 }}>IA Share from Fund (₹ Cr)</div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={forecastSeries('ia_fund_share')}>
-                  <CartesianGrid {...chartStyle.cartesianGrid} />
-                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
-                  <Bar dataKey="value" fill="#c9a84c" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{ overflow: 'visible' }}>
+                <ResponsiveContainer width="100%" height={200} style={{ overflow: 'visible' }}>
+                  <BarChart data={forecastSeries('ia_fund_share')}
+                    margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+                    <CartesianGrid {...chartStyle.cartesianGrid} />
+                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                    <Bar dataKey="value" fill="#c9a84c" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="value" position="top" formatter={(val) => fmtCr(val)} style={{ fill: '#9e9b92', fontSize: 11, fontFamily: 'DM Sans' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>

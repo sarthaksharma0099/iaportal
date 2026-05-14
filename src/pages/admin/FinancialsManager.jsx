@@ -7,6 +7,7 @@ export default function FinancialsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
   const toast = useToast();
+  const [revenueSubtitle, setRevenueSubtitle] = useState('');
 
   const loadSections = React.useCallback(async () => {
     setLoading(true);
@@ -18,6 +19,13 @@ export default function FinancialsManager() {
       
       if (error) throw error;
       setSections(data || []);
+
+      const { data: sub } = await supabaseAdmin
+        .from('content_blocks')
+        .select('value')
+        .eq('block_key', 'financials_revenue_subtitle')
+        .single()
+      if (sub) setRevenueSubtitle(sub.value)
     } catch (e) {
       toast(e.message, 'error');
     } finally {
@@ -28,6 +36,19 @@ export default function FinancialsManager() {
   useEffect(() => {
     loadSections();
   }, [loadSections]);
+
+  async function saveSubtitle() {
+    try {
+      const { error } = await supabaseAdmin
+        .from('content_blocks')
+        .update({ value: revenueSubtitle })
+        .eq('block_key', 'financials_revenue_subtitle')
+      if (error) throw error
+      toast('Subtitle saved successfully!')
+    } catch (e) {
+      toast(e.message, 'error')
+    }
+  }
 
   async function toggleSection(key) {
     setSaving(key);
@@ -64,6 +85,50 @@ export default function FinancialsManager() {
         Control which sections are visible to investors on the Financials page.
         Hidden sections are preserved — you can re-enable them anytime.
       </p>
+
+      {/* Subtitle Editor */}
+      <div style={{
+        background: '#111110',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12, padding: '20px 24px',
+        marginBottom: 24
+      }}>
+        <div style={{ fontSize: 12, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+          Revenue Trajectory Subtitle
+        </div>
+        <textarea 
+          rows="2"
+          value={revenueSubtitle}
+          onChange={e => setRevenueSubtitle(e.target.value)}
+          style={{
+            width: '100%',
+            background: '#1a1a18',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8,
+            padding: '10px 14px',
+            color: 'white',
+            fontSize: 14,
+            fontFamily: 'DM Sans',
+            resize: 'vertical',
+            marginBottom: 12
+          }}
+        />
+        <button 
+          onClick={saveSubtitle}
+          style={{
+            background: '#00B4A6',
+            color: '#0a0a08',
+            border: 'none',
+            borderRadius: 6,
+            padding: '8px 20px',
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: 'pointer'
+          }}
+        >
+          Save Subtitle
+        </button>
+      </div>
 
       {sections.map(section => (
         <div key={section.key} style={{
