@@ -101,6 +101,7 @@ function VerticalCard({ vertical, onSave, onUpload }) {
   const [description, setDescription] = useState(vertical.description || '');
   const [isVisible, setIsVisible] = useState(vertical.is_visible);
   const [pdfUrl, setPdfUrl] = useState(vertical.pdf_url || '');
+  const [docTitle, setDocTitle] = useState(vertical.doc_title || '');
   const [statRows, setStatRows] = useState(vertical.stats || []);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef();
@@ -124,7 +125,8 @@ function VerticalCard({ vertical, onSave, onUpload }) {
       description,
       is_visible: isVisible,
       stats: updatedStats,
-      pdf_url: pdfUrl
+      pdf_url: pdfUrl,
+      doc_title: docTitle
     });
     setSaving(false);
   };
@@ -255,6 +257,25 @@ function VerticalCard({ vertical, onSave, onUpload }) {
                 fontSize: 13, marginTop: 8
               }}
             >+ Add Stat</button>
+          </div>
+
+          <div style={{ marginBottom: 32 }}>
+            <label style={{ display: 'block', fontSize: 12, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Documentation Section Title</label>
+            <input 
+              value={docTitle || 'Detailed Overview'} 
+              onChange={e => setDocTitle(e.target.value)} 
+              placeholder="Detailed Overview"
+              style={{
+                width: '100%',
+                background: '#1a1a18',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                padding: '8px 12px',
+                color: 'white',
+                fontSize: 14,
+                fontFamily: 'DM Sans'
+              }}
+            />
           </div>
 
           <div style={{ marginBottom: 32 }}>

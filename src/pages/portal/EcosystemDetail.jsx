@@ -303,7 +303,7 @@ export default function EcosystemDetail() {
             <h2 style={{
               fontSize: 36, fontFamily: 'Cormorant Garamond',
               fontWeight: 300, color: '#fff', margin: 0
-            }}>Detailed Overview</h2>
+            }}>{vertical.doc_title || 'Detailed Overview'}</h2>
           </div>
 
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
