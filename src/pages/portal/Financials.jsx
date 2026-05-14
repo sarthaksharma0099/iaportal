@@ -9,6 +9,7 @@ import {
   ReferenceLine, LabelList
 } from 'recharts';
 import { Dots } from '../../components/UI';
+import { supabase } from '../../lib/supabase';
 
 const SHEET_ID = '1X6bUGtXki3HJWhYlISKVMBr_SjHKi8dNr1OOrUSYr8w';
 
@@ -113,7 +114,39 @@ export default function Financials({ email }) {
     funds: []
   });
   const [forecastsData, setForecastsData] = useState({});
+  const [sections, setSections] = useState({});
+  const [projectionsData, setProjectionsData] = useState([]);
 
+  function isVisible(key) {
+    if (!sections || Object.keys(sections).length === 0) {
+      return true
+    }
+    return sections[key] !== false
+  }
+
+  // Fetch Section Visibility
+  useEffect(() => {
+    async function fetchSections() {
+      try {
+        const { data: sectionsData } = await supabase
+          .from('financials_sections')
+          .select('key, is_visible')
+        
+        if (sectionsData) {
+          const map = {}
+          sectionsData.forEach(s => {
+            map[s.key] = s.is_visible
+          })
+          setSections(map)
+        }
+      } catch(err) {
+        console.error('Sections fetch failed:', err)
+      }
+    }
+    fetchSections()
+  }, [])
+
+  // Main Data Fetch
   useEffect(() => {
     let cancelled = false
     
@@ -131,6 +164,36 @@ export default function Financials({ email }) {
           fetchSheet(SHEET_ID, 'Funds'),
           fetchSheet(SHEET_ID, 'Forecasts'),
         ])
+
+        if (cancelled) return
+
+        // Projections fetch in separate try/catch
+        try {
+          const projectionsRaw = await fetchSheet(SHEET_ID, 'Projections')
+          const projectionsParsed = Array.isArray(projectionsRaw) ? projectionsRaw : []
+          
+          const safeProjections = projectionsParsed.map(r => {
+            const keys = Object.keys(r)
+            const find = (name) => {
+              const k = keys.find(k => k.trim().toLowerCase() === name)
+              return parseFloat(r[k]) || 0
+            }
+            return {
+              year: r.year || r.Year || r[keys[0]],
+              revenue: find('revenue'),
+              cities: find('cities'),
+              hubs: find('hubs'),
+              seats: find('seats'),
+              spaces_revenue: find('spaces_revenue'),
+              startups_added: find('startups_added'),
+              equity_value: find('equity_value'),
+              ia_fund_share: find('ia_fund_share'),
+            }
+          })
+          setProjectionsData(safeProjections)
+        } catch(projErr) {
+          console.error('Projections fetch failed:', projErr)
+        }
         
         console.log('Sheet data loaded:', {
           overview: overview.length,
@@ -138,66 +201,60 @@ export default function Financials({ email }) {
           portfolio: portfolio.length,
           irr: irr.length,
           pl: pl.length,
-          funds: funds.length,
-          forecasts: forecastsRaw.length
+          funds: funds.length
         })
         
-        if (!cancelled) {
-          // Parse overview into key-value map
-          const ovMap = {}
-          overview.forEach(row => {
-            if (row.key) ovMap[row.key] = row.value
-          })
+        // Parse overview into key-value map
+        const ovMap = {}
+        overview.forEach(row => {
+          if (row.key) ovMap[row.key] = row.value
+        })
 
-          const forecastsMap = {}
-          forecastsRaw.forEach(row => {
-            forecastsMap[row.metric] = {
-              fy26: parseFloat(row.fy26) || 0,
-              fy27: parseFloat(row.fy27) || 0,
-              fy28: parseFloat(row.fy28) || 0,
-              fy29: parseFloat(row.fy29) || 0,
-            }
-          })
-          setForecastsData(forecastsMap)
+        const forecastsMap = {}
+        forecastsRaw.forEach(row => {
+          forecastsMap[row.metric] = {
+            fy26: parseFloat(row.fy26) || 0,
+            fy27: parseFloat(row.fy27) || 0,
+            fy28: parseFloat(row.fy28) || 0,
+            fy29: parseFloat(row.fy29) || 0,
+          }
+        })
+        setForecastsData(forecastsMap)
+        
+        setData({
+          overview: ovMap,
+          deployment: deploymentParsed.map(r => ({
+            year: r.year || '',
+            revenue: parseFloat(r.revenue) || parseFloat(r.deployed) || 0,
+            profit: parseFloat(r.profit) || 0,
+            target: parseFloat(r.target) || parseFloat(r.committed) || 0,
+            deployed: parseFloat(r.revenue) || parseFloat(r.deployed) || 0,
+            committed: parseFloat(r.target) || parseFloat(r.committed) || 0,
+          })).filter(r => r.year),
           
-          setData({
-            overview: ovMap,
-            deployment: deploymentParsed.map(r => ({
-              year: r.year || '',
-              revenue: parseFloat(r.revenue) || parseFloat(r.deployed) || 0,
-              profit: parseFloat(r.profit) || 0,
-              target: parseFloat(r.target) || parseFloat(r.committed) || 0,
-              // Keep old names for compatibility with other charts
-              deployed: parseFloat(r.revenue) || parseFloat(r.deployed) || 0,
-              committed: parseFloat(r.target) || parseFloat(r.committed) || 0,
-            })).filter(r => r.year),
-            
-            portfolio: portfolio.map(r => ({
-              name: r.stage || '',
-              value: parseFloat(r.count) || 0,
-              color: r.color || '#00B4A6',
-            })).filter(r => r.name),
-            
-            irr: irr.map(r => ({
-              month: r.month || '',
-              irr: parseFloat(r.irr) || 0,
-            })).filter(r => r.month),
-            
-            pl: pl,
-            
-            funds: funds.map(r => ({
-              name: r.name || '',
-              stage: r.stage || '',
-              status: r.status || 'Active',
-              investments: parseInt(r.investments) || 0,
-              color: r.color || '#00B4A6',
-            })).filter(r => r.name),
-          })
+          portfolio: portfolio.map(r => ({
+            name: r.stage || '',
+            value: parseFloat(r.count) || 0,
+            color: r.color || '#00B4A6',
+          })).filter(r => r.name),
           
-          console.log('RAW deployment[0]:', 
-            JSON.stringify(deploymentParsed[0]))
-          setLoading(false)
-        }
+          irr: irr.map(r => ({
+            month: r.month || '',
+            irr: parseFloat(r.irr) || 0,
+          })).filter(r => r.month),
+          
+          pl: pl,
+          
+          funds: funds.map(r => ({
+            name: r.name || '',
+            stage: r.stage || '',
+            status: r.status || 'Active',
+            investments: parseInt(r.investments) || 0,
+            color: r.color || '#00B4A6',
+          })).filter(r => r.name),
+        })
+        
+        setLoading(false)
       } catch(e) {
         console.error('Failed to load sheet:', e)
         if (!cancelled) {
@@ -366,14 +423,16 @@ export default function Financials({ email }) {
         gap: '2rem'
       }}>
         {[
-          { label: 'Overview', id: 'overview' },
-          { label: 'Revenue Growth', id: 'revenue-growth' },
-          { label: 'Fund Performance', id: 'fund-performance' },
-          { label: 'Unit Economics', id: 'unit-economics' },
-          { label: 'P&L', id: 'financials' },
-          { label: 'Balance Sheet', id: 'balance-sheet' },
-          { label: 'Forecasts', id: 'forecasts' },
-        ].map(n => (
+          { id: 'overview', label: 'Overview', key: 'overview' },
+          { id: 'revenue-trajectory', label: 'Revenue', key: 'revenue_trajectory' },
+          { id: 'projections', label: 'Forecasts', key: 'projections' },
+          { id: 'revenue-growth', label: 'Revenue Growth', key: 'revenue_growth' },
+          { id: 'fund-performance', label: 'Fund Performance', key: 'fund_performance' },
+          { id: 'unit-economics', label: 'Unit Economics', key: 'unit_economics' },
+          { id: 'financials', label: 'P&L', key: 'pnl' },
+          { id: 'balance-sheet', label: 'Balance Sheet', key: 'balance_sheet' },
+          { id: 'forecasts', label: 'KPIs', key: 'forecasts' },
+        ].filter(link => isVisible(link.key)).map(n => (
           <a key={n.id} href={`#${n.id}`} style={{
             fontSize: 12, color: 'rgba(255,255,255,0.5)',
             textDecoration: 'none', textTransform: 'uppercase',
@@ -387,6 +446,7 @@ export default function Financials({ email }) {
       </div>
 
       {/* OVERVIEW */}
+      {isVisible('overview') && (
       <section id="overview" style={{
         padding: '80px 80px 60px'
       }}>
@@ -516,8 +576,177 @@ export default function Financials({ email }) {
           by APAM & Co., Chartered Accountants.
         </div>
       </section>
+      )}
 
-      {/* REVENUE GROWTH */}
+      {/* REVENUE TRAJECTORY SECTION */}
+      {isVisible('revenue_trajectory') && (
+      <section id="revenue-trajectory"
+        style={{
+          padding: '60px 80px',
+          borderTop: '1px solid rgba(255,255,255,0.06)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <div style={{ width: 32, height: 1, background: '#c9a84c' }} />
+          <div style={{ fontSize: 13, color: '#c9a84c', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500 }}>REVENUE TRAJECTORY</div>
+        </div>
+        <h2 style={{ fontSize: 42, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, color: '#fff', marginBottom: 8 }}>Revenue Growth Story</h2>
+        <p style={{ fontSize: 15, color: '#9e9b92', marginBottom: 40 }}>From ₹3.9 Cr in FY21 to ₹35.5 Cr in FY25 — and projecting ₹964 Cr by FY30</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <ChartCard title="Revenue Growth (In INR Cr)">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={(data.deployment||[]).filter(r => ['FY21','FY22','FY23','FY24','FY25'].includes(r.year))}>
+                <CartesianGrid {...chartStyle.cartesianGrid} />
+                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                <YAxis tick={chartStyle.yAxis.tick} />
+                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                <Bar dataKey="revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          <ChartCard title="Projected Revenue Growth (In INR Cr)">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={projectionsData.map(r => ({ year: r.year, revenue: r.revenue }))}>
+                <CartesianGrid {...chartStyle.cartesianGrid} />
+                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                <YAxis tick={chartStyle.yAxis.tick} />
+                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                <Bar dataKey="revenue" name="Projected Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="revenue" position="top" style={{ fill: '#9e9b92', fontSize: 11 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div style={{ fontSize: 11, color: '#9e9b92', fontStyle: 'italic', marginTop: 12 }}>* FY26 onwards are projections</div>
+          </ChartCard>
+        </div>
+      </section>
+      )}
+
+      {/* KEY FINANCIAL FORECASTS SECTION */}
+      {isVisible('projections') && (
+      <section id="projections"
+        style={{
+          padding: '60px 80px',
+          borderTop: '1px solid rgba(255,255,255,0.06)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <div style={{ width: 32, height: 1, background: '#c9a84c' }} />
+          <div style={{ fontSize: 13, color: '#c9a84c', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500 }}>CRITICAL KPIs</div>
+        </div>
+        <h2 style={{ fontSize: 42, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, color: '#fff', marginBottom: 8 }}>Key Financial Forecasts</h2>
+        <p style={{ fontSize: 15, color: '#9e9b92', marginBottom: 40 }}>Forward-looking projections across Infrastructure, Accelerator and Fund verticals</p>
+
+        <div style={{ fontSize: 11, color: '#00B4A6', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 20, fontWeight: 500 }}>INFRASTRUCTURE</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
+          {/* Chart 1: Total Cities & Hubs */}
+          <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Cities & Hubs</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
+                <CartesianGrid {...chartStyle.cartesianGrid} />
+                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                <Legend wrapperStyle={chartStyle.legend.wrapperStyle} />
+                <Bar dataKey="cities" name="Cities" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="cities" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
+                </Bar>
+                <Bar dataKey="hubs" name="Hubs" fill="rgba(0,180,166,0.4)" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="hubs" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Chart 2: Total Seats */}
+          <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Seats (In 000's)</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
+                <CartesianGrid {...chartStyle.cartesianGrid} />
+                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                <Bar dataKey="seats" name="Seats (000s)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="seats" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Chart 3: IA Spaces Revenue */}
+          <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>IA Spaces Revenue (₹ Cr)</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
+                <CartesianGrid {...chartStyle.cartesianGrid} />
+                <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                <Bar dataKey="spaces_revenue" name="Revenue (Cr)" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="spaces_revenue" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} formatter={(val) => fmtCr(val)} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '65% 35%', gap: 24, marginTop: 40 }}>
+          {/* Accelerator */}
+          <div>
+            <div style={{ fontSize: 11, color: '#00B4A6', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>ACCELERATOR (MENTOR EQUITY)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Startups Added</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
+                    <CartesianGrid {...chartStyle.cartesianGrid} />
+                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                    <Bar dataKey="startups_added" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="startups_added" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Value of Equity Added (₹ Cr)</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
+                    <CartesianGrid {...chartStyle.cartesianGrid} />
+                    <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                    <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                    <Bar dataKey="equity_value" fill="#00B4A6" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="equity_value" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} formatter={(val) => fmtCr(val)} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Fund */}
+          <div>
+            <div style={{ fontSize: 11, color: '#c9a84c', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>FUND (EXCLUDING CARRY)</div>
+            <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>IA Share from Fund (₹ Cr)</div>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={projectionsData.filter(r => ['FY26','FY27','FY28','FY29'].includes(r.year))}>
+                  <CartesianGrid {...chartStyle.cartesianGrid} />
+                  <XAxis dataKey="year" tick={chartStyle.xAxis.tick} />
+                  <Tooltip contentStyle={chartStyle.tooltip.contentStyle} formatter={(val) => fmtCr(val)} />
+                  <Bar dataKey="ia_fund_share" fill="#c9a84c" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="ia_fund_share" position="top" style={{ fill: '#9e9b92', fontSize: 10 }} formatter={(val) => fmtCr(val)} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </section>
+      )}
+
+       {/* REVENUE GROWTH */}
+      {isVisible('revenue_growth') && (
       <section id="revenue-growth" style={{
         padding: '60px 80px',
         borderTop: '1px solid rgba(255,255,255,0.06)'
@@ -578,8 +807,10 @@ export default function Financials({ email }) {
           </div>
         </div>
       </section>
+      )}
 
       {/* FUND PERFORMANCE */}
+      {isVisible('fund_performance') && (
       <section id="fund-performance" style={{
         padding: '60px 80px',
         borderTop:
@@ -718,8 +949,10 @@ export default function Financials({ email }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* IRR */}
+      {isVisible('unit_economics') && (
       <section id="unit-economics" style={{
         padding: '60px 80px',
         borderTop:
@@ -779,8 +1012,10 @@ export default function Financials({ email }) {
           </ResponsiveContainer>
         </ChartCard>
       </section>
+      )}
 
       {/* FINANCIALS / P&L */}
+      {isVisible('pnl') && (
       <section id="financials" style={{
         padding: '60px 80px',
         borderTop:
@@ -892,7 +1127,7 @@ export default function Financials({ email }) {
                        row.type==='profit'
                   ? '#fff' : '#9e9b92',
                 fontWeight: row.type==='total'||
-                            row.type==='profit'
+                             row.type==='profit'
                   ? 500 : 400
               }}>{row.metric}</div>
               <div style={{
@@ -934,8 +1169,10 @@ export default function Financials({ email }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* BALANCE SHEET */}
+      {isVisible('balance_sheet') && (
       <section id="balance-sheet" style={{
         padding: '60px 80px',
         borderTop: '1px solid rgba(255,255,255,0.06)'
@@ -1022,8 +1259,10 @@ export default function Financials({ email }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* KEY FORECASTS */}
+      {isVisible('forecasts') && (
       <section id="forecasts" style={{
         padding: '60px 80px',
         borderTop: '1px solid rgba(255,255,255,0.06)'
@@ -1186,6 +1425,7 @@ export default function Financials({ email }) {
           </div>
         </div>
       </section>
+      )}
 
       {/* Footer */}
       <div style={{

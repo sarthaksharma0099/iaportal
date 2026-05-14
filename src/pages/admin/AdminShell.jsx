@@ -24,7 +24,7 @@ const NAV = [
   { key: 'theses',     label: 'Theses',       icon: '◧', group: 'Portal' },
   { key: 'team',       label: 'Team',         icon: '◎', group: 'Portal' },
   { key: 'pitchdeck',  label: 'Pitch Deck',   icon: '⬡', group: 'Portal' },
-  { key: 'financials', label: 'Financials',   icon: '▦', group: 'Portal' },
+  { key: 'financials_mgr', label: 'Financials', icon: '◈', group: 'Portal' },
   { key: 'presence',   label: 'Presence',     icon: '◎', group: 'Portal' },
   { key: 'ecosystem',  label: 'Ecosystem',    icon: '◉', group: 'Portal' },
   { key: 'investors',  label: 'Investors',    icon: '◎', group: 'Access' },
@@ -51,7 +51,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
     theses: 'Investment Theses',
     team: 'Team Management', 
     pitchdeck: 'Pitch Deck',
-    financials: 'Financials Manager',
+    financials_mgr: 'Financials Sections',
     presence: 'Presence Manager',
     ecosystem: 'Ecosystem Verticals',
     investors: 'Investor Access', 
@@ -143,7 +143,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
             <Route path="theses" element={<ThesesManager />} />
             <Route path="team" element={<TeamManager />} />
             <Route path="pitchdeck" element={<PitchDeckManager />} />
-            <Route path="financials" element={<FinancialsManager />} />
+            <Route path="financials_mgr" element={<FinancialsManager />} />
             <Route path="presence" element={<PresenceManager />} />
             <Route path="ecosystem" element={<EcosystemManager />} />
             <Route path="investors" element={<Investors />} />
