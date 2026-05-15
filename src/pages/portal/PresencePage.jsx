@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import {
   ComposableMap,
   Geographies,
@@ -99,10 +100,45 @@ const INDIA_CITIES = [
 
 export default function PresencePage({ email }) {
   const navigate = useNavigate();
-  const [hoveredGlobal, setHoveredGlobal] = 
-    useState(null);
-  const [hoveredCity, setHoveredCity] = 
-    useState(null);
+  const [hoveredGlobal, setHoveredGlobal] = useState(null);
+  const [hoveredCity, setHoveredCity] = useState(null);
+  const [presenceContent, setPresenceContent] = useState({
+    presence_hero_title: 'Pan-India & Global',
+    presence_hero_subtitle_line2: 'Footprint',
+    presence_hero_description: '30+ coworking hubs across 16 Indian cities with international presence in 8 countries spanning 4 continents.',
+    presence_badge_1: '30+ Coworking Hubs',
+    presence_badge_2: '16 Indian Cities',
+    presence_badge_3: '8 Countries',
+    presence_badge_4: '4 Continents',
+    presence_india_title: '30+ Hubs Across 16 Cities',
+    presence_india_subtitle: 'Coworking spaces, accelerator hubs and innovation centres spanning major Indian cities',
+  });
+
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        const { data } = await supabase
+          .from('content_blocks')
+          .select('block_key, value')
+          .eq('section_key', 'presence');
+        
+        if (data && data.length > 0) {
+          const map = {};
+          data.forEach(b => {
+            map[b.block_key] = b.value;
+          });
+          setPresenceContent(prev => ({
+            ...prev, ...map
+          }));
+        }
+      } catch(err) {
+        console.error('Presence content fetch:', err);
+      }
+    }
+    fetchContent();
+  }, []);
+
+  const pc = (key) => presenceContent[key] || '';
 
   return (
     <div style={{
@@ -173,7 +209,7 @@ export default function PresencePage({ email }) {
             fontSize: 64, fontWeight: 300,
             color: '#fff', lineHeight: 1.0
           }}>
-            Pan-India & Global
+            {pc('presence_hero_title')}
           </div>
           <div style={{
             fontFamily: 'Cormorant Garamond, serif',
@@ -181,16 +217,14 @@ export default function PresencePage({ email }) {
             color: '#00B4A6', lineHeight: 1.0,
             marginBottom: 20
           }}>
-            Footprint
+            {pc('presence_hero_subtitle_line2')}
           </div>
           <div style={{
             fontSize: 17, color: '#9e9b92',
             maxWidth: 600, lineHeight: 1.7,
             marginBottom: 40
           }}>
-            30+ coworking hubs across 16 Indian 
-            cities with international presence 
-            in 8 countries spanning 4 continents.
+            {pc('presence_hero_description')}
           </div>
 
           {/* Stat pills */}
@@ -199,10 +233,10 @@ export default function PresencePage({ email }) {
             flexWrap: 'wrap'
           }}>
             {[
-              '30+ Coworking Hubs',
-              '16 Indian Cities',
-              '8 Countries',
-              '4 Continents'
+              pc('presence_badge_1'),
+              pc('presence_badge_2'),
+              pc('presence_badge_3'),
+              pc('presence_badge_4')
             ].map(s => (
               <div key={s} style={{
                 background: 'rgba(255,255,255,0.04)',
@@ -478,14 +512,12 @@ export default function PresencePage({ email }) {
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: 42, fontWeight: 300,
             color: '#fff', marginBottom: 8
-          }}>30+ Hubs Across 16 Cities</div>
+          }}>{pc('presence_india_title')}</div>
           <div style={{
             fontSize: 15, color: '#9e9b92',
             marginBottom: 40
           }}>
-            Coworking spaces, accelerator hubs 
-            and innovation centres spanning 
-            major Indian cities
+            {pc('presence_india_subtitle')}
           </div>
 
           <div style={{

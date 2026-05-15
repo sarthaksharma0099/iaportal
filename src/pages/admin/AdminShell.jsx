@@ -14,6 +14,7 @@ import PitchDeckManager from './PitchDeckManager';
 import FinancialsManager from './FinancialsManager';
 import PresenceManager from './PresenceManager';
 import EcosystemManager from './EcosystemManager';
+import PresenceContentManager from './PresenceContentManager';
 
 const NAV = [
   { key: 'dashboard',  label: 'Dashboard',    icon: '▦', group: 'Overview' },
@@ -26,6 +27,7 @@ const NAV = [
   { key: 'pitchdeck',  label: 'Pitch Deck',   icon: '⬡', group: 'Portal' },
   { key: 'financials_mgr', label: 'Financials', icon: '◈', group: 'Portal' },
   { key: 'presence',   label: 'Presence',     icon: '◎', group: 'Portal' },
+  { key: 'presence_content', label: 'Presence Content', icon: '◎', group: 'Portal' },
   { key: 'ecosystem',  label: 'Ecosystem',    icon: '◉', group: 'Portal' },
   { key: 'investors',  label: 'Investors',    icon: '◎', group: 'Access' },
   { key: 'requests',   label: 'Requests',     icon: '◉', group: 'Access', badge: true },
@@ -53,6 +55,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
     pitchdeck: 'Pitch Deck',
     financials_mgr: 'Financials Sections',
     presence: 'Presence Manager',
+    presence_content: 'Presence Page Content',
     ecosystem: 'Ecosystem Verticals',
     investors: 'Investor Access', 
     requests: 'Access Requests',
@@ -145,6 +148,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
             <Route path="pitchdeck" element={<PitchDeckManager />} />
             <Route path="financials_mgr" element={<FinancialsManager />} />
             <Route path="presence" element={<PresenceManager />} />
+            <Route path="presence_content" element={<PresenceContentManager />} />
             <Route path="ecosystem" element={<EcosystemManager />} />
             <Route path="investors" element={<Investors />} />
             <Route path="requests" element={<Requests />} />
