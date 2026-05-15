@@ -100,7 +100,12 @@ export default function EcosystemDetail() {
   useEffect(() => {
     function updateWidth() {
       if (pdfWrapperRef.current) {
-        setContainerWidth(pdfWrapperRef.current.clientWidth);
+        const rect = pdfWrapperRef.current.getBoundingClientRect();
+        const availableWidth = Math.min(
+          rect.width,
+          window.innerWidth - 80
+        );
+        setContainerWidth(availableWidth);
       }
     }
     updateWidth();
@@ -110,6 +115,21 @@ export default function EcosystemDetail() {
     }
     return () => observer.disconnect();
   }, [vertical]);
+
+  useEffect(() => {
+    function handleResize() {
+      if (pdfWrapperRef.current) {
+        const rect = pdfWrapperRef.current.getBoundingClientRect();
+        const availableWidth = Math.min(
+          rect.width,
+          window.innerWidth - 80
+        );
+        setContainerWidth(availableWidth);
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Reset to page 1 when vertical changes
   useEffect(() => {
@@ -284,7 +304,13 @@ export default function EcosystemDetail() {
 
       {/* PDF SECTION */}
       {vertical.pdf_url && (
-        <div style={{ padding: '60px 48px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ 
+          padding: '60px 40px', 
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+          maxWidth: '100%'
+        }}>
           <div style={{ marginBottom: 32 }}>
             <p style={{
               fontSize: 11, letterSpacing: '0.15em',
@@ -297,8 +323,25 @@ export default function EcosystemDetail() {
             }}>{vertical.doc_title || 'Detailed Overview'}</h2>
           </div>
 
-          <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
-            <div ref={pdfWrapperRef} style={{ width: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 400 }}>
+          <div style={{ 
+            background: '#111110', 
+            border: '1px solid rgba(255,255,255,0.07)', 
+            borderRadius: 16, 
+            overflow: 'hidden', 
+            position: 'relative',
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <div ref={pdfWrapperRef} style={{ 
+              width: '100%', 
+              position: 'relative', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              minHeight: 400,
+              overflow: 'hidden',
+              maxWidth: '100%'
+            }}>
               <Document
                 file={vertical.pdf_url}
                 onLoadSuccess={({ numPages }) => {
@@ -314,7 +357,7 @@ export default function EcosystemDetail() {
               >
                 <Page
                   pageNumber={currentPage}
-                  width={containerWidth > 0 ? containerWidth : undefined}
+                  width={containerWidth > 0 ? Math.min(containerWidth, window.innerWidth - 80) : undefined}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                   onRenderSuccess={() => setPageLoading(false)}
