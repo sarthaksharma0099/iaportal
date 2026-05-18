@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
+import { supabaseAdmin } from '../../lib/supabase';
 import Dashboard  from './Dashboard';
 import Sections   from './Sections';
 import Content    from './Content';
@@ -15,7 +16,13 @@ import FinancialsManager from './FinancialsManager';
 import PresenceManager from './PresenceManager';
 import EcosystemManager from './EcosystemManager';
 import PresenceContentManager from './PresenceContentManager';
+import GenericSectionManager from './GenericSectionManager';
 
+const STATIC_KEYS = [
+  'dashboard', 'sections', 'content', 'portfolio', 'programs', 
+  'theses', 'team', 'pitchdeck', 'financials_mgr', 'presence', 
+  'presence_content', 'ecosystem', 'investors', 'requests', 'analytics'
+];
 const NAV = [
   { key: 'dashboard',  label: 'Dashboard',    icon: '▦', group: 'Overview' },
   { key: 'sections',   label: 'Sections',     icon: '◫', group: 'Portal' },
@@ -37,12 +44,38 @@ const NAV = [
 export default function AdminShell({ onSignOut, pendingCount }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [dynamicSections, setDynamicSections] = useState([]);
   
+  useEffect(() => {
+    async function loadSections() {
+      try {
+        const { data } = await supabaseAdmin
+          .from('portal_sections')
+          .select('key, title, icon')
+          .order('sort_order');
+        if (data) setDynamicSections(data);
+      } catch (err) {
+        console.error('Failed to load dynamic sections for admin nav', err);
+      }
+    }
+    loadSections();
+  }, []);
+
   // Extract current page from URL e.g. /admin/investors -> investors
   const currentPath = location.pathname.split('/').filter(Boolean);
   const activePage = currentPath[1] || 'dashboard';
 
-  const groups = [...new Set(NAV.map(n => n.group))];
+  const dynamicNavItems = dynamicSections
+    .filter(s => !STATIC_KEYS.includes(s.key))
+    .map(s => ({
+      key: `dynamic_${s.key}`,
+      label: s.title,
+      icon: s.icon || '◈',
+      group: 'Sections'
+    }));
+
+  const allNav = [...NAV, ...dynamicNavItems];
+  const groups = [...new Set(allNav.map(n => n.group))];
 
   const titles = {
     dashboard: 'Dashboard', 
@@ -61,6 +94,10 @@ export default function AdminShell({ onSignOut, pendingCount }) {
     requests: 'Access Requests',
     analytics: 'Analytics',
   };
+
+  dynamicNavItems.forEach(item => {
+    titles[item.key] = `${item.label} Manager`;
+  });
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -87,7 +124,7 @@ export default function AdminShell({ onSignOut, pendingCount }) {
               <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '1rem 1.25rem 0.4rem' }}>
                 {group}
               </div>
-              {NAV.filter(n => n.group === group).map(n => (
+              {allNav.filter(n => n.group === group).map(n => (
                 <div key={n.key} onClick={() => navigate(`/admin/${n.key}`)} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '0.65rem 1.25rem', cursor: 'pointer',
@@ -153,6 +190,22 @@ export default function AdminShell({ onSignOut, pendingCount }) {
             <Route path="investors" element={<Investors />} />
             <Route path="requests" element={<Requests />} />
             <Route path="analytics" element={<Analytics />} />
+            {dynamicNavItems.map(item => {
+              const sectionKey = item.key.replace('dynamic_', '');
+              const sectionData = dynamicSections.find(s => s.key === sectionKey);
+              return (
+                <Route 
+                  key={item.key} 
+                  path={item.key} 
+                  element={
+                    <GenericSectionManager 
+                      sectionKey={sectionKey} 
+                      sectionTitle={sectionData?.title || sectionKey} 
+                    />
+                  } 
+                />
+              );
+            })}
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>

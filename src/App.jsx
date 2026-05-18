@@ -13,6 +13,7 @@ import PresencePage from './pages/portal/PresencePage';
 import ProgramsPage from './pages/portal/ProgramsPage';
 import ThesesPage from './pages/portal/ThesesPage';
 import EcosystemDetail from './pages/portal/EcosystemDetail';
+import GenericSectionPage from './pages/portal/GenericSectionPage';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminShell from './pages/admin/AdminShell';
 import { ToastProvider } from './components/UI';
@@ -159,6 +160,13 @@ export default function App() {
         <Route path="/theses" element={
           investorEmail
             ? <ThesesPage
+                email={investorEmail} />
+            : <Navigate to="/" replace />
+        } />
+
+        <Route path="/section/:key" element={
+          investorEmail
+            ? <GenericSectionPage 
                 email={investorEmail} />
             : <Navigate to="/" replace />
         } />

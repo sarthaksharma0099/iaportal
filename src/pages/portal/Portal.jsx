@@ -106,6 +106,8 @@ export default function Portal({ email, onSignOut }) {
       navigate('/theses');
     } else if (type === 'presence' || section.key === 'presence' || section.title?.toLowerCase().includes('presence')) {
       navigate('/presence');
+    } else {
+      navigate(`/section/${section.key}`);
     }
   }
 
