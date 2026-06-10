@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate } 
+import { Routes, Route, Navigate, useLocation } 
   from 'react-router-dom';
 import { supabaseAdmin } 
   from './lib/supabase';
@@ -18,6 +18,14 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminShell from './pages/admin/AdminShell';
 import { ToastProvider } from './components/UI';
 import './styles/global.css';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 export default function App() {
   const [investorEmail, setInvestorEmail] = 
@@ -100,6 +108,7 @@ export default function App() {
   return (
     <>
       <ToastProvider />
+      <ScrollToTop />
       <Routes>
 
         <Route path="/admin" element={

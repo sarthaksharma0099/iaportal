@@ -53,6 +53,7 @@ function segmentPath(cx, cy, r1, r2, startAngle, endAngle) {
 }
 
 export default function Portal({ email, onSignOut }) {
+  const isMobile = window.innerWidth <= 768;
   const navigate = useNavigate();
   const [sections, setSections]   = useState([]);
   const [content, setContent]     = useState({});
@@ -165,22 +166,22 @@ export default function Portal({ email, onSignOut }) {
         ) : (
           <>
             {/* ── Hero ── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '100px 4rem 80px' }}>
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '60px 1.5rem 40px' : '100px 4rem 80px' }}>
               <div className="fade-up" style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ width: 32, height: 1, background: 'var(--gold)', display: 'block' }} />
                 {hero.stage || 'Investor Materials'}
               </div>
-              <h1 className="fade-up d1" style={{ fontFamily: 'var(--serif)', fontSize: '96px', fontWeight: 300, lineHeight: 0.9, color: '#fff', marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
+              <h1 className="fade-up d1" style={{ fontFamily: 'var(--serif)', fontSize: isMobile ? '48px' : '96px', fontWeight: 300, lineHeight: 0.9, color: '#fff', marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
                 {hero.fund_name || 'India Accelerator'}<br />
-                <em style={{ color: 'var(--gold)', fontStyle: 'italic', fontSize: '96px' }}>{hero.tagline_short || 'Investor Portal'}</em>
+                <em style={{ color: 'var(--gold)', fontStyle: 'italic', fontSize: isMobile ? '48px' : '96px' }}>{hero.tagline_short || 'Investor Portal'}</em>
               </h1>
-              <p className="fade-up d2" style={{ fontSize: 22, color: 'var(--text2)', maxWidth: 650, lineHeight: 1.6, marginBottom: '4rem' }}>
+              <p className="fade-up d2" style={{ fontSize: isMobile ? 15 : 22, color: 'var(--text2)', maxWidth: 650, lineHeight: 1.6, marginBottom: '4rem' }}>
                 {hero.tagline || 'Building the next generation of Indian founders.'}
               </p>
 
               {/* Stats */}
               <div className="fade-up d3" style={{
-                display: 'grid', gridTemplateColumns: 'repeat(4,1fr)',
+                display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
                 border: '1px solid var(--border)', borderRadius: 16,
                 overflow: 'hidden', maxWidth: 700, background: 'var(--border)',
                 gap: 1,
@@ -199,14 +200,14 @@ export default function Portal({ email, onSignOut }) {
                   }}>
                     <div style={{ 
                       fontFamily: 'var(--serif)', 
-                      fontSize: 36, 
+                      fontSize: isMobile ? 22 : 36, 
                       fontWeight: 300, 
                       color: '#fff', 
                       lineHeight: 1, 
                       marginBottom: 6,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      whiteSpace: isMobile ? 'normal' : 'nowrap',
+                      overflow: isMobile ? 'visible' : 'hidden',
+                      textOverflow: isMobile ? 'clip' : 'ellipsis'
                     }}>{s.v}</div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.l}</div>
                   </div>
@@ -218,13 +219,13 @@ export default function Portal({ email, onSignOut }) {
             <div style={{ height: 1, background: 'var(--border)', maxWidth: 1200, margin: '0 auto' }} />
 
             {/* ── ECOSYSTEM WHEEL ── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 4rem 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '40px 1.5rem 40px' : '60px 4rem 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ textAlign: 'center', marginBottom: 48 }}>
                 <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                   <span style={{ width: 32, height: 1, background: 'var(--gold)', display: 'block' }} />
                   IA ECOSYSTEM
                 </div>
-                <h2 style={{ fontFamily: 'var(--serif)', fontSize: 42, fontWeight: 300, color: '#fff', marginBottom: 12 }}>The IA Ecosystem</h2>
+                <h2 style={{ fontFamily: 'var(--serif)', fontSize: isMobile ? 28 : 42, fontWeight: 300, color: '#fff', marginBottom: 12 }}>The IA Multiverse</h2>
                 <p style={{ fontSize: 15, color: '#9e9b92', maxWidth: 500, margin: '12px auto 0' }}>Six interconnected verticals powering India's startup ecosystem</p>
               </div>
 
@@ -365,20 +366,20 @@ export default function Portal({ email, onSignOut }) {
             </section>
 
             {/* ── Materials Grid ── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: '5rem 4rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '3rem 1.5rem' : '5rem 4rem' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 0, justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: 8 }}>Materials</div>
                   <h2 style={{ fontFamily: 'var(--serif)', fontSize: 40, fontWeight: 300, color: '#fff', lineHeight: 1.1 }}>Investor Documents</h2>
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--text2)', maxWidth: 340, lineHeight: 1.6, textAlign: 'right', marginTop: 4 }}>
+                <p style={{ fontSize: 13, color: 'var(--text2)', maxWidth: 340, lineHeight: 1.6, textAlign: isMobile ? 'left' : 'right', marginTop: 4 }}>
                   Access our pitch deck, financials, portfolio, and due diligence materials.
                 </p>
               </div>
 
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3,1fr)',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)',
                 gap: 1, background: 'var(--border)',
                 border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden',
               }}>
