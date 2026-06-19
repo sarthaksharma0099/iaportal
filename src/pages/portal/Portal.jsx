@@ -57,6 +57,7 @@ export default function Portal({ email, onSignOut }) {
   const navigate = useNavigate();
   const [sections, setSections]   = useState([]);
   const [content, setContent]     = useState({});
+  // eslint-disable-next-line no-unused-vars
   const [ecosystem, setEcosystem] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [hoveredSegment, setHoveredSegment] = useState(null);
@@ -116,22 +117,31 @@ export default function Portal({ email, onSignOut }) {
   const fin     = content['financials'] || {};
   const gridSec = sections.filter(s => s.key !== 'hero');
 
-  // Wheel configuration
-  const wheelConfig = [
-    { key: 'finvolve', startAngle: 270, color: '#00B4A6' },
-    { key: 'iangels',  startAngle: 330, color: '#c9a84c' },
-    { key: 'spaces',   startAngle: 30,  color: '#00B4A6' },
-    { key: 'vas',      startAngle: 90,  color: '#4aae8c' },
-    { key: 'programs', startAngle: 150, color: '#00B4A6' },
-    { key: 'thesis',   startAngle: 210, color: '#c9a84c' }
+  // Inner ring configuration (3 segments, 120 degrees each)
+  const wheelInnerConfig = [
+    { key: 'founder_capital', title: 'Founder Capital', startAngle: 240, color: '#2d6d56' },
+    { key: 'founder_access',  title: 'Founder Access',  startAngle: 0,   color: '#008379' },
+    { key: 'founder_success', title: 'Founder Success', startAngle: 120, color: '#9d8033' }
   ];
 
-  const activeVerticals = wheelConfig.map(conf => {
-    const data = ecosystem.find(v => v.key === conf.key);
-    return data ? { ...conf, ...data } : null;
-  }).filter(v => v);
+  // Outer ring configuration (9 segments, dynamic angles to align with inner segments)
+  const wheelOuterConfig = [
+    { key: 'finvolve', title: 'Finvolve & Funds', group: 'founder_capital', color: '#4aae8c', lines: ['Finvolve &', 'Funds'], startAngle: 240, angleSpan: 120 },
+    { key: 'city_activation_team', title: 'City Activation Team', group: 'founder_access', color: '#00B4A6', lines: ['City', 'Activation', 'Team'], startAngle: 0, angleSpan: 30 },
+    { key: 'spaces', title: 'Spaces', group: 'founder_access', color: '#009e92', lines: ['Spaces'], startAngle: 30, angleSpan: 30 },
+    { key: 'vas', title: 'Value Added Services', group: 'founder_access', color: '#00887e', lines: ['Value Added', 'Services'], startAngle: 60, angleSpan: 30 },
+    { key: 'academia_corporate_programs', title: 'Academia & Corporate Programs', group: 'founder_access', color: '#00d0c0', lines: ['Academia &', 'Corporate', 'Programs'], startAngle: 90, angleSpan: 30 },
+    { key: 'starlink', title: 'Starlink', group: 'founder_success', color: '#c9a84c', lines: ['Starlink'], startAngle: 120, angleSpan: 30 },
+    { key: 'page', title: 'Portfolio & Growth Engine (PAGE)', group: 'founder_success', color: '#b59640', lines: ['Portfolio &', 'Growth Engine', '(PAGE)'], startAngle: 150, angleSpan: 30 },
+    { key: 'coes', title: 'CoEs', group: 'founder_success', color: '#9c8031', lines: ['CoEs'], startAngle: 180, angleSpan: 30 },
+    { key: 'theses', title: 'Theses', group: 'founder_success', color: '#dfc05d', lines: ['Theses'], startAngle: 210, angleSpan: 30 }
+  ];
 
-  const hoveredData = activeVerticals.find(v => v.key === hoveredSegment);
+  const outerSegments = wheelOuterConfig.map(seg => ({
+    ...seg
+  }));
+
+
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -166,7 +176,7 @@ export default function Portal({ email, onSignOut }) {
         ) : (
           <>
             {/* ── Hero ── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '60px 1.5rem 40px' : '100px 4rem 80px' }}>
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '60px 1.5rem 40px' : '100px 4rem 48px' }}>
               <div className="fade-up" style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ width: 32, height: 1, background: 'var(--gold)', display: 'block' }} />
                 {hero.stage || 'Investor Materials'}
@@ -219,21 +229,21 @@ export default function Portal({ email, onSignOut }) {
             <div style={{ height: 1, background: 'var(--border)', maxWidth: 1200, margin: '0 auto' }} />
 
             {/* ── ECOSYSTEM WHEEL ── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '40px 1.5rem 40px' : '60px 4rem 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '40px 1.5rem 32px' : '32px 4rem 32px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ textAlign: 'center', marginBottom: 48 }}>
                 <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                   <span style={{ width: 32, height: 1, background: 'var(--gold)', display: 'block' }} />
                   IA ECOSYSTEM
                 </div>
                 <h2 style={{ fontFamily: 'var(--serif)', fontSize: isMobile ? 28 : 42, fontWeight: 300, color: '#fff', marginBottom: 12 }}>The IA Multiverse</h2>
-                <p style={{ fontSize: 15, color: '#9e9b92', maxWidth: 500, margin: '12px auto 0' }}>Six interconnected verticals powering India's startup ecosystem</p>
+                <p style={{ fontSize: 15, color: '#9e9b92', maxWidth: 500, margin: '12px auto 0' }}>Three pillars, nine verticals — powering India's founder ecosystem</p>
               </div>
 
               <div 
-                style={{ position: 'relative' }}
+                style={{ position: 'relative', maxWidth: 720, margin: '0 auto' }}
                 onMouseLeave={() => setHoveredSegment(null)}
               >
-                <svg viewBox="0 0 600 600" style={{ width: '100%', maxWidth: 560, display: 'block', margin: '0 auto', overflow: 'visible' }}>
+                <svg viewBox="0 0 600 600" style={{ width: '100%', maxWidth: 680, display: 'block', margin: '0 auto', overflow: 'visible' }}>
                   {/* Center Circle */}
                   <circle cx={300} cy={300} r={80} fill="#111110" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
                   <foreignObject
@@ -262,45 +272,24 @@ export default function Portal({ email, onSignOut }) {
                     </div>
                   </foreignObject>
 
-                  {/* Segments */}
-                  {activeVerticals.map(seg => {
-                    const midAngle = seg.startAngle + 29;
-                    const midPointLabel = polarToCartesian(300, 300, 148, midAngle);
-                    const midPointStat = polarToCartesian(300, 300, 240, midAngle);
-                    const firstStat = seg.stats?.[0] || {};
+                  {/* Inner Ring (3 segments, decorative only) */}
+                  {wheelInnerConfig.map(seg => {
+                    const midAngle = seg.startAngle + 60;
+                    const midPointLabel = polarToCartesian(300, 300, 130, midAngle);
 
                     return (
                       <g key={seg.key}>
-                        {/* Outer Ring Background */}
                         <path
-                          d={segmentPath(300, 300, 212, 268, seg.startAngle, seg.startAngle + 58)}
-                          fill="rgba(255,255,255,0.03)"
-                          stroke="#0a0a08"
-                          strokeWidth={2}
+                          d={segmentPath(300, 300, 96, 164, seg.startAngle + 3, seg.startAngle + 120 - 3)}
+                          fill={seg.color}
+                          stroke={seg.color}
+                          strokeWidth={8}
+                          strokeLinejoin="round"
+                          style={{ pointerEvents: 'none' }}
                         />
-
-                        {/* Outer Stat Text */}
-                        <text x={midPointStat.x} y={midPointStat.y - 4} textAnchor="middle" fontSize={14} fill="#c9a84c" fontFamily="'Cormorant Garamond', serif" fontWeight={300}>
-                          {firstStat.value}
-                        </text>
-                        <text x={midPointStat.x} y={midPointStat.y + 12} textAnchor="middle" fontSize={9} fill="#9e9b92" fontFamily="'DM Sans', sans-serif" textTransform="uppercase" letterSpacing={0.5}>
-                          {firstStat.label}
-                        </text>
-
-                        {/* Inner Clickable Segment */}
-                        <path
-                          d={segmentPath(300, 300, 90, 200, seg.startAngle, seg.startAngle + 58)}
-                          fill={hoveredSegment === seg.key ? seg.color : seg.color + '99'}
-                          stroke="#0a0a08"
-                          strokeWidth={2}
-                          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
-                          onMouseEnter={() => setHoveredSegment(seg.key)}
-                          onClick={() => navigate(`/ecosystem/${seg.key}`)}
-                        />
-
-                        {/* Segment Label */}
                         <text
-                          x={midPointLabel.x} y={midPointLabel.y}
+                          x={midPointLabel.x}
+                          y={midPointLabel.y}
                           textAnchor="middle"
                           dominantBaseline="middle"
                           fill="white"
@@ -315,58 +304,58 @@ export default function Portal({ email, onSignOut }) {
                       </g>
                     );
                   })}
+
+                  {/* Outer Ring (9 segments, clickable) */}
+                  {outerSegments.map(seg => {
+                    const midAngle = seg.startAngle + seg.angleSpan / 2;
+                    const midPointLabel = polarToCartesian(300, 300, 220, midAngle);
+                    const lines = seg.lines || [seg.title];
+
+                    return (
+                      <g key={seg.key}>
+                        <path
+                          d={segmentPath(300, 300, 184, 256, seg.startAngle + 1.5, seg.startAngle + seg.angleSpan - 1.5)}
+                          fill={hoveredSegment === seg.key ? seg.color : seg.color + '99'}
+                          stroke={hoveredSegment === seg.key ? seg.color : seg.color + '99'}
+                          strokeWidth={8}
+                          strokeLinejoin="round"
+                          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+                          onMouseEnter={() => setHoveredSegment(seg.key)}
+                          onClick={() => navigate(`/ecosystem/${seg.key}`)}
+                        />
+                        <text
+                          x={midPointLabel.x}
+                          y={midPointLabel.y}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fill="white"
+                          fontSize={9.5}
+                          fontFamily="'DM Sans', sans-serif"
+                          fontWeight={600}
+                          style={{ pointerEvents: 'none' }}
+                          transform={`rotate(${midAngle + (midAngle > 90 && midAngle < 270 ? 180 : 0)}, ${midPointLabel.x}, ${midPointLabel.y})`}
+                        >
+                          {lines.map((line, idx) => (
+                            <tspan
+                              key={idx}
+                              x={midPointLabel.x}
+                              dy={idx === 0 ? `${-(lines.length - 1) * 0.6}em` : '1.2em'}
+                            >
+                              {line}
+                            </tspan>
+                          ))}
+                        </text>
+                      </g>
+                    );
+                  })}
                 </svg>
 
-                {/* Hover Tooltip */}
-                <div 
-                  onClick={() => hoveredSegment && navigate(`/ecosystem/${hoveredSegment}`)}
-                  style={{
-                    background: '#111110',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 16,
-                    padding: '24px 32px',
-                    marginTop: 16,
-                    maxWidth: 500,
-                    margin: '16px auto 0',
-                    textAlign: 'center',
-                    transition: 'all 0.25s ease',
-                    opacity: hoveredSegment ? 1 : 0,
-                    transform: hoveredSegment ? 'translateY(0)' : 'translateY(8px)',
-                    pointerEvents: hoveredSegment ? 'auto' : 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {hoveredData && (
-                    <>
-                      <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, color: '#fff', marginBottom: 16 }}>
-                        {hoveredData.title}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
-                        {(hoveredData.stats || []).slice(0, 3).map((s, i) => (
-                          <div key={i}>
-                            <div style={{ fontSize: 24, color: '#c9a84c', fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
-                              {s.value}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 4 }}>
-                              {s.label}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ fontSize: 13, color: '#00B4A6', marginTop: 16, fontFamily: "'DM Sans', sans-serif" }}>
-                        Click to explore →
-                      </div>
-                    </>
-                  )}
-                  {!hoveredData && (
-                    <div style={{ color: '#555', fontSize: 13, paddingTop: 30 }}>Hover over a vertical to see details</div>
-                  )}
-                </div>
+
               </div>
             </section>
 
             {/* ── Materials Grid ── */}
-            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '3rem 1.5rem' : '5rem 4rem' }}>
+            <section style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '3rem 1.5rem' : '3rem 4rem 5rem' }}>
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 0, justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 500, marginBottom: 8 }}>Materials</div>

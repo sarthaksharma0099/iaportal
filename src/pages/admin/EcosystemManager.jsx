@@ -104,6 +104,9 @@ function VerticalCard({ vertical, onSave, onUpload }) {
   const [docTitle, setDocTitle] = useState(vertical.doc_title || '');
   const [statRows, setStatRows] = useState(vertical.stats || []);
   const [saving, setSaving] = useState(false);
+  const [corridors, setCorridors] = useState([]);
+  const [corridorsLoading, setCorridorsLoading] = useState(false);
+  const [savedCorridorId, setSavedCorridorId] = useState(null);
   const fileInputRef = useRef();
   const toast = useToast();
 
@@ -115,6 +118,79 @@ function VerticalCard({ vertical, onSave, onUpload }) {
 
   const removeStat = (index) => {
     setStatRows(statRows.filter((_, i) => i !== index));
+  };
+
+  const fetchCorridors = useCallback(async () => {
+    setCorridorsLoading(true);
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('starlink_corridors')
+        .select('*')
+        .order('sort_order');
+      if (error) throw error;
+      setCorridors(data || []);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      setCorridorsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (expanded && vertical.key === 'starlink') {
+      fetchCorridors();
+    }
+  }, [expanded, vertical.key, fetchCorridors]);
+
+  const addCorridor = async () => {
+    try {
+      const { error } = await supabaseAdmin
+        .from('starlink_corridors')
+        .insert({
+          country: '',
+          partner: '',
+          sectors: '',
+          launch_model: 'Soft Launch',
+          sort_order: corridors.length + 1
+        });
+      if (error) throw error;
+      await fetchCorridors();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  const deleteCorridor = async (id) => {
+    try {
+      const { error } = await supabaseAdmin
+        .from('starlink_corridors')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      await fetchCorridors();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  const saveCorridor = async (corridor) => {
+    try {
+      const { error } = await supabaseAdmin
+        .from('starlink_corridors')
+        .update({
+          country: corridor.country,
+          partner: corridor.partner,
+          sectors: corridor.sectors,
+          launch_model: corridor.launch_model,
+          sort_order: corridor.sort_order
+        })
+        .eq('id', corridor.id);
+      if (error) throw error;
+      setSavedCorridorId(corridor.id);
+      setTimeout(() => setSavedCorridorId(null), 2000);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
   };
 
   const handleSaveClick = async () => {
@@ -259,6 +335,49 @@ function VerticalCard({ vertical, onSave, onUpload }) {
             >+ Add Stat</button>
           </div>
 
+          {vertical.key === 'starlink' && (
+            <>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 24 }} />
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Global Corridors</label>
+              <div style={{ fontSize: 12, color: 'var(--text4)', marginBottom: 16 }}>Manage Starlink corridor entries</div>
+
+              {corridorsLoading ? (
+                <div style={{ color: 'var(--text3)', fontSize: 13, padding: '12px 0' }}>Loading corridors...</div>
+              ) : corridors.length === 0 ? (
+                <div style={{ color: 'var(--text4)', fontSize: 13, padding: '12px 0', fontStyle: 'italic' }}>No corridors yet. Click "Add Corridor" to create one.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                  {corridors.map((c, i) => (
+                    <CorridorRow
+                      key={c.id}
+                      corridor={c}
+                      index={i}
+                      onChange={(field, value) => {
+                        const updated = [...corridors];
+                        updated[i] = { ...updated[i], [field]: value };
+                        setCorridors(updated);
+                      }}
+                      onDelete={() => deleteCorridor(c.id)}
+                      onSave={() => saveCorridor(corridors[i])}
+                      saved={savedCorridorId === c.id}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={addCorridor}
+                style={{
+                  background: 'rgba(0,180,166,0.08)',
+                  border: '1px solid rgba(0,180,166,0.2)',
+                  color: '#00B4A6', borderRadius: 8,
+                  padding: '8px 16px', cursor: 'pointer',
+                  fontSize: 13, marginTop: 4, marginBottom: 24
+                }}
+              >+ Add Corridor</button>
+            </>
+          )}
+
           <div style={{ marginBottom: 32 }}>
             <label style={{ display: 'block', fontSize: 12, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Documentation Section Title</label>
             <input 
@@ -315,5 +434,96 @@ function VerticalCard({ vertical, onSave, onUpload }) {
         </div>
       )}
     </Card>
+  );
+}
+
+function CorridorRow({ corridor, onChange, onDelete, onSave, saved }) {
+  return (
+    <div style={{ 
+      display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+      padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.05)'
+    }}>
+      <input
+        placeholder="Country"
+        value={corridor.country}
+        onChange={e => onChange('country', e.target.value)}
+        style={{
+          flex: 1, minWidth: 120, background: '#1a1a18',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '8px 12px',
+          color: 'white', fontSize: 13
+        }}
+      />
+      <input
+        placeholder="Partner"
+        value={corridor.partner}
+        onChange={e => onChange('partner', e.target.value)}
+        style={{
+          flex: 1, minWidth: 120, background: '#1a1a18',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '8px 12px',
+          color: 'white', fontSize: 13
+        }}
+      />
+      <input
+        placeholder="Sectors"
+        value={corridor.sectors}
+        onChange={e => onChange('sectors', e.target.value)}
+        style={{
+          flex: 1, minWidth: 100, background: '#1a1a18',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '8px 12px',
+          color: 'white', fontSize: 13
+        }}
+      />
+      <select
+        value={corridor.launch_model}
+        onChange={e => onChange('launch_model', e.target.value)}
+        style={{
+          background: '#1a1a18',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '8px 12px',
+          color: 'white', fontSize: 13, cursor: 'pointer'
+        }}
+      >
+        <option value="Soft Launch">Soft Launch</option>
+        <option value="Hard Launch">Hard Launch</option>
+      </select>
+      <input
+        type="number"
+        placeholder="#"
+        value={corridor.sort_order}
+        onChange={e => onChange('sort_order', parseInt(e.target.value) || 0)}
+        style={{
+          width: 60, background: '#1a1a18',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '8px 12px',
+          color: 'white', fontSize: 13, textAlign: 'center'
+        }}
+      />
+      <button
+        onClick={onSave}
+        style={{
+          background: saved ? 'rgba(74,174,140,0.2)' : 'rgba(0,180,166,0.08)',
+          border: saved ? '1px solid rgba(74,174,140,0.3)' : '1px solid rgba(0,180,166,0.2)',
+          color: saved ? '#6fcfb0' : '#00B4A6', borderRadius: 8,
+          padding: '8px 10px', cursor: 'pointer',
+          fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 36, transition: 'all 0.15s'
+        }}
+      >{saved ? '✓' : 'Save'}</button>
+      <button
+        onClick={onDelete}
+        style={{
+          background: 'rgba(255,80,80,0.1)',
+          border: '1px solid rgba(255,80,80,0.2)',
+          color: '#ff5050', borderRadius: 8,
+          padding: '8px 12px', cursor: 'pointer',
+          fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 36
+        }}
+      >×</button>
+    </div>
   );
 }

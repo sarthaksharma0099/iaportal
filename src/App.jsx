@@ -12,6 +12,7 @@ import Financials from './pages/portal/Financials';
 import PresencePage from './pages/portal/PresencePage';
 import ProgramsPage from './pages/portal/ProgramsPage';
 import ThesesPage from './pages/portal/ThesesPage';
+import StarlinkPage from './pages/portal/StarlinkPage';
 import EcosystemDetail from './pages/portal/EcosystemDetail';
 import GenericSectionPage from './pages/portal/GenericSectionPage';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -152,6 +153,12 @@ export default function App() {
 
         <Route path="/financials" element={investorEmail ? <Financials email={investorEmail} /> : <Navigate to="/" replace />} />
         <Route path="/presence" element={investorEmail ? <PresencePage email={investorEmail} /> : <Navigate to="/" replace />} />
+
+        <Route path="/ecosystem/starlink" element={
+          investorEmail
+            ? <StarlinkPage email={investorEmail} />
+            : <Navigate to="/" replace />
+        } />
 
         <Route path="/ecosystem/:key" element={
           investorEmail
