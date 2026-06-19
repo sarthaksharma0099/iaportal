@@ -54,6 +54,7 @@ function segmentPath(cx, cy, r1, r2, startAngle, endAngle) {
 
 export default function Portal({ email, onSignOut }) {
   const isMobile = window.innerWidth <= 768;
+  const navMobile = window.innerWidth <= 600;
   const navigate = useNavigate();
   const [sections, setSections]   = useState([]);
   const [content, setContent]     = useState({});
@@ -151,7 +152,7 @@ export default function Portal({ email, onSignOut }) {
       {/* Nav */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-        height: 64, padding: '0 2.5rem',
+        height: 64, padding: navMobile ? '0 1rem' : '0 2.5rem',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'rgba(10,10,8,0.88)', backdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--border)',
@@ -161,7 +162,9 @@ export default function Portal({ email, onSignOut }) {
           <span style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>India Accelerator</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{email}</span>
+          {!navMobile && (
+            <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>{email}</span>
+          )}
           <Badge variant="approved">Investor</Badge>
           <button onClick={onSignOut} style={{ fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer' }}>Sign out</button>
         </div>
@@ -243,33 +246,23 @@ export default function Portal({ email, onSignOut }) {
                 onMouseLeave={() => setHoveredSegment(null)}
               >
                 <svg viewBox="0 0 600 600" style={{ width: '100%', maxWidth: 680, display: 'block', margin: '0 auto', overflow: 'visible' }}>
+                  <defs>
+                    <clipPath id="centerClip">
+                      <circle cx={300} cy={300} r={78} />
+                    </clipPath>
+                  </defs>
                   {/* Center Circle */}
                   <circle cx={300} cy={300} r={80} fill="#111110" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-                  <foreignObject
-                    x={235}
-                    y={255}
-                    width={130}
-                    height={90}
-                  >
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <img
-                        src="/images/logos/ialogo.jpeg"
-                        alt="India Accelerator"
-                        style={{
-                          width: '90px',
-                          height: 'auto',
-                          objectFit: 'contain',
-                          filter: 'brightness(1.1)',
-                        }}
-                      />
-                    </div>
-                  </foreignObject>
+                  <image
+                    href="/images/logos/ialogo.jpeg"
+                    x={210}
+                    y={220}
+                    width={180}
+                    height={160}
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{ borderRadius: 8 }}
+                    clipPath="url(#centerClip)"
+                  />
 
                   {/* Inner Ring (3 segments, decorative only) */}
                   {wheelInnerConfig.map(seg => {

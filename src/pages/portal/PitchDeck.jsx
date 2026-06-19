@@ -187,7 +187,10 @@ export default function PitchDeck() {
         >
           <Page
             pageNumber={currentPage}
-            width={containerWidth || window.innerWidth}
+            width={containerWidth
+              ? Math.min(containerWidth, window.innerHeight * 1.4)
+              : Math.min(window.innerWidth, window.innerHeight * 1.4)
+            }
             renderTextLayer={false}
             renderAnnotationLayer={false}
             onRenderSuccess={() => setPageLoading(false)}

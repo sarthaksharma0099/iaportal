@@ -63,42 +63,46 @@ function parseCSV(text) {
     })
 }
 
-const chartStyle = {
-  cartesianGrid: {
-    strokeDasharray: '3 3',
-    stroke: 'rgba(255,255,255,0.04)'
-  },
-  xAxis: {
-    tick: {
-      fill: 'rgba(255,255,255,0.4)',
-      fontSize: 12
+function getChartStyles(isMobile) {
+  return {
+    cartesianGrid: {
+      strokeDasharray: '3 3',
+      stroke: 'rgba(255,255,255,0.04)'
+    },
+    xAxis: {
+      tick: {
+        fill: 'rgba(255,255,255,0.4)',
+        fontSize: isMobile ? 9 : 12
+      }
+    },
+    yAxis: {
+      tick: {
+        fill: 'rgba(255,255,255,0.4)',
+        fontSize: isMobile ? 9 : 12
+      }
+    },
+    tooltip: {
+      contentStyle: {
+        background: '#111110',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 8,
+        color: 'white',
+        fontSize: 12
+      }
+    },
+    legend: {
+      wrapperStyle: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 12
+      }
     }
-  },
-  yAxis: {
-    tick: {
-      fill: 'rgba(255,255,255,0.4)',
-      fontSize: 12
-    }
-  },
-  tooltip: {
-    contentStyle: {
-      background: '#111110',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 8,
-      color: 'white',
-      fontSize: 12
-    }
-  },
-  legend: {
-    wrapperStyle: {
-      color: 'rgba(255,255,255,0.6)',
-      fontSize: 12
-    }
-  }
-};
+  };
+}
 
 export default function Financials({ email }) {
   const navigate = useNavigate();
+  const isMobile = window.innerWidth <= 768;
+  const chartStyle = React.useMemo(() => getChartStyles(isMobile), [isMobile]);
   const [currency, setCurrency] = useState('INR');
   const [selectedYear, setSelectedYear] = 
     useState('FY26');
@@ -345,6 +349,7 @@ export default function Financials({ email }) {
         navigate={navigate}
         currency={currency}
         setCurrency={setCurrency}
+        isMobile={isMobile}
       />
       <div style={{
         display: 'flex',
@@ -424,6 +429,7 @@ export default function Financials({ email }) {
         navigate={navigate}
         currency={currency}
         setCurrency={setCurrency}
+        isMobile={isMobile}
       />
 
       {/* Sticky Section Nav */}
@@ -461,7 +467,7 @@ export default function Financials({ email }) {
       {/* OVERVIEW */}
       {isVisible('overview') && (
       <section id="overview" style={{
-        padding: '80px 80px 60px'
+        padding: isMobile ? '40px 16px 32px' : '80px 80px 60px'
       }}>
         <div style={{
           display: 'flex',
@@ -595,7 +601,7 @@ export default function Financials({ email }) {
       {isVisible('revenue_trajectory') && (
       <section id="revenue-trajectory"
         style={{
-          padding: '60px 80px',
+          padding: isMobile ? '32px 16px' : '60px 80px',
           borderTop: '1px solid rgba(255,255,255,0.06)'
         }}
       >
@@ -606,7 +612,7 @@ export default function Financials({ email }) {
         <h2 style={{ fontSize: 42, fontFamily: "'Cormorant Garamond', serif", fontWeight: 300, color: '#fff', marginBottom: 8 }}>Revenue Growth Story</h2>
         <p style={{ fontSize: 15, color: '#9e9b92', marginBottom: 40 }}>{revenueSubtitle}</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 24 }}>
           <ChartCard title="Revenue Growth (In INR Cr)">
             <div style={{ overflow: 'visible' }}>
               <ResponsiveContainer width="100%" height={280} style={{ overflow: 'visible' }}>
@@ -649,7 +655,7 @@ export default function Financials({ email }) {
       {isVisible('projections') && (
       <section id="projections"
         style={{
-          padding: '60px 80px',
+          padding: isMobile ? '32px 16px' : '60px 80px',
           borderTop: '1px solid rgba(255,255,255,0.06)'
         }}
       >
@@ -661,7 +667,7 @@ export default function Financials({ email }) {
         <p style={{ fontSize: 15, color: '#9e9b92', marginBottom: 40 }}>Forward-looking projections across Infrastructure, Accelerator and Fund verticals</p>
 
         <div style={{ fontSize: 11, color: '#00B4A6', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 20, fontWeight: 500 }}>INFRASTRUCTURE</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
           {/* Chart 1: Total Cities & Hubs */}
           <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Total Cities & Hubs</div>
@@ -719,11 +725,11 @@ export default function Financials({ email }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '65% 35%', gap: 24, marginTop: 40 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '65% 35%', gap: 24, marginTop: 40 }}>
           {/* Accelerator */}
           <div>
-            <div style={{ fontSize: 11, color: '#00B4A6', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>ACCELERATOR (MENTOR EQUITY)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ fontSize: 11, color: '#00B4A6', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>{isMobile ? 'ACCELERATOR' : 'ACCELERATOR (MENTOR EQUITY)'}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>Startups Added</div>
                 <div style={{ overflow: 'visible' }}>
@@ -760,7 +766,7 @@ export default function Financials({ email }) {
 
           {/* Fund */}
           <div>
-            <div style={{ fontSize: 11, color: '#c9a84c', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>FUND (EXCLUDING CARRY)</div>
+            <div style={{ fontSize: 11, color: '#c9a84c', textTransform: 'uppercase', marginBottom: 20, fontWeight: 500 }}>{isMobile ? 'FUND' : 'FUND (EXCLUDING CARRY)'}</div>
             <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 16 }}>IA Share from Fund (₹ Cr)</div>
               <div style={{ overflow: 'visible' }}>
@@ -785,7 +791,7 @@ export default function Financials({ email }) {
        {/* REVENUE GROWTH */}
       {isVisible('revenue_growth') && (
       <section id="revenue-growth" style={{
-        padding: '60px 80px',
+        padding: isMobile ? '32px 16px' : '60px 80px',
         borderTop: '1px solid rgba(255,255,255,0.06)'
       }}>
         <SectionLabel label="REVENUE GROWTH" />
@@ -796,7 +802,7 @@ export default function Financials({ email }) {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '3fr 2fr',
+          gridTemplateColumns: isMobile ? '1fr' : '3fr 2fr',
           gap: 24
         }}>
           <ChartCard title="Revenue vs Profit (₹ Cr)">
@@ -827,7 +833,7 @@ export default function Financials({ email }) {
             </div>
           </ChartCard>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
             {[
               { val: currentRatio, label: 'Current Ratio', note: 'Healthy liquidity position' },
               { val: debtEquity, label: 'Debt-Equity Ratio', note: 'Conservative leverage' },
@@ -852,7 +858,7 @@ export default function Financials({ email }) {
       {/* FUND PERFORMANCE */}
       {isVisible('fund_performance') && (
       <section id="fund-performance" style={{
-        padding: '60px 80px',
+        padding: isMobile ? '32px 16px' : '60px 80px',
         borderTop:
           '1px solid rgba(255,255,255,0.06)'
       }}>
@@ -864,7 +870,7 @@ export default function Financials({ email }) {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
           gap: 24, marginBottom: 32
         }}>
           <ChartCard title="Capital Deployment (₹ Cr)">
@@ -937,7 +943,7 @@ export default function Financials({ email }) {
         <div style={{
           display: 'grid',
           gridTemplateColumns:
-            'repeat(5,1fr)',
+            isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)',
           gap: 12
         }}>
           {data.funds.map((f, i) => (
@@ -997,7 +1003,7 @@ export default function Financials({ email }) {
       {/* IRR */}
       {isVisible('unit_economics') && (
       <section id="unit-economics" style={{
-        padding: '60px 80px',
+        padding: isMobile ? '32px 16px' : '60px 80px',
         borderTop:
           '1px solid rgba(255,255,255,0.06)'
       }}>
@@ -1060,7 +1066,7 @@ export default function Financials({ email }) {
       {/* FINANCIALS / P&L */}
       {isVisible('pnl') && (
       <section id="financials" style={{
-        padding: '60px 80px',
+        padding: isMobile ? '32px 16px' : '60px 80px',
         borderTop:
           '1px solid rgba(255,255,255,0.06)'
       }}>
@@ -1217,7 +1223,7 @@ export default function Financials({ email }) {
       {/* BALANCE SHEET */}
       {isVisible('balance_sheet') && (
       <section id="balance-sheet" style={{
-        padding: '60px 80px',
+        padding: isMobile ? '32px 16px' : '60px 80px',
         borderTop: '1px solid rgba(255,255,255,0.06)'
       }}>
         <SectionLabel label="BALANCE SHEET" />
@@ -1228,7 +1234,7 @@ export default function Financials({ email }) {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
           gap: 24
         }}>
           {/* Assets */}
@@ -1307,7 +1313,7 @@ export default function Financials({ email }) {
       {/* KEY FORECASTS */}
       {isVisible('forecasts') && (
       <section id="forecasts" style={{
-        padding: '60px 80px',
+        padding: isMobile ? '32px 16px' : '60px 80px',
         borderTop: '1px solid rgba(255,255,255,0.06)'
       }}>
         <div style={{
@@ -1335,7 +1341,7 @@ export default function Financials({ email }) {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
           gap: 24, marginBottom: 48
         }}>
           {/* Chart 1: Cities & Hubs */}
@@ -1400,7 +1406,7 @@ export default function Financials({ email }) {
         {/* BLOCK 2: ACCELERATOR & FUND */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '65% 35%',
+          gridTemplateColumns: isMobile ? '1fr' : '65% 35%',
           gap: 24
         }}>
           {/* Accelerator Column */}
@@ -1410,8 +1416,8 @@ export default function Financials({ email }) {
               textTransform: 'uppercase',
               letterSpacing: '0.12em',
               marginBottom: 24, fontWeight: 500
-            }}>ACCELERATOR (MENTOR EQUITY)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            }}>{isMobile ? 'ACCELERATOR' : 'ACCELERATOR (MENTOR EQUITY)'}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
               {/* Startup Added */}
               <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 12 }}>Startups Added</div>
@@ -1470,7 +1476,7 @@ export default function Financials({ email }) {
               textTransform: 'uppercase',
               letterSpacing: '0.12em',
               marginBottom: 24, fontWeight: 500
-            }}>FUND (EXCLUDING CARRY)</div>
+            }}>{isMobile ? 'FUND' : 'FUND (EXCLUDING CARRY)'}</div>
             <div style={{ background: '#111110', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 12 }}>IA Share from Fund (₹ Cr)</div>
               <div style={{ overflow: 'visible' }}>
@@ -1495,7 +1501,7 @@ export default function Financials({ email }) {
       <div style={{
         borderTop:
           '1px solid rgba(255,255,255,0.06)',
-        padding: '32px 80px',
+        padding: isMobile ? '24px 16px' : '32px 80px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -1522,12 +1528,12 @@ export default function Financials({ email }) {
 /* ── Sub-components ── */
 
 function TopBar({ navigate, currency,
-  setCurrency }) {
+  setCurrency, isMobile }) {
   return (
     <div style={{
       position: 'fixed', top: 0,
       left: 0, right: 0, zIndex: 50,
-      height: 64, padding: '0 40px',
+      height: 64, padding: isMobile ? '0 16px' : '0 40px',
       display: 'flex', alignItems: 'center',
       justifyContent: 'space-between',
       background: 'rgba(10,10,8,0.95)',
@@ -1544,6 +1550,7 @@ function TopBar({ navigate, currency,
         }}>
         ← Back to Portal
       </button>
+      {!isMobile && (
       <span style={{
         fontSize: 14, color:
           'rgba(255,255,255,0.5)',
@@ -1552,6 +1559,7 @@ function TopBar({ navigate, currency,
       }}>
         Financial Projections
       </span>
+      )}
       <div style={{
         display: 'flex', gap: 4,
         alignItems: 'center'

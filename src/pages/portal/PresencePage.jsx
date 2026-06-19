@@ -100,6 +100,7 @@ const INDIA_CITIES = [
 
 export default function PresencePage({ email }) {
   const navigate = useNavigate();
+  const isMobile = window.innerWidth <= 768;
   const [hoveredGlobal, setHoveredGlobal] = useState(null);
   const [hoveredCity, setHoveredCity] = useState(null);
   const [presenceContent, setPresenceContent] = useState({
@@ -185,7 +186,7 @@ export default function PresencePage({ email }) {
 
         {/* HERO */}
         <section style={{
-          padding: '60px 80px 40px'
+          padding: isMobile ? '40px 20px 24px' : '60px 80px 40px'
         }}>
           <div style={{
             display: 'flex',
@@ -206,14 +207,14 @@ export default function PresencePage({ email }) {
 
           <div style={{
             fontFamily: 'Cormorant Garamond, serif',
-            fontSize: 64, fontWeight: 300,
+            fontSize: isMobile ? 36 : 64, fontWeight: 300,
             color: '#fff', lineHeight: 1.0
           }}>
             {pc('presence_hero_title')}
           </div>
           <div style={{
             fontFamily: 'Cormorant Garamond, serif',
-            fontSize: 64, fontStyle: 'italic',
+            fontSize: isMobile ? 36 : 64, fontStyle: 'italic',
             color: '#00B4A6', lineHeight: 1.0,
             marginBottom: 20
           }}>
@@ -251,7 +252,7 @@ export default function PresencePage({ email }) {
 
         {/* WORLD MAP */}
         <section style={{
-          padding: '60px 80px',
+          padding: isMobile ? '32px 16px' : '60px 80px',
           borderTop: '1px solid rgba(255,255,255,0.06)'
         }}>
           <div style={{
@@ -498,7 +499,7 @@ export default function PresencePage({ email }) {
 
         {/* INDIA MAP */}
         <section style={{
-          padding: '60px 80px 80px',
+          padding: isMobile ? '32px 16px 32px' : '60px 80px 80px',
           borderTop:
             '1px solid rgba(255,255,255,0.06)'
         }}>
@@ -544,7 +545,8 @@ export default function PresencePage({ email }) {
                 }}
                 style={{
                   width: '100%',
-                  height: 'auto'
+                  height: 'auto',
+                  maxHeight: isMobile ? 300 : 500
                 }}>
                 <Geographies
                   geography={WORLD_GEO_URL}>
