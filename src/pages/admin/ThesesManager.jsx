@@ -68,6 +68,42 @@ export default function ThesesManager() {
     } catch (e) { toast(e.message, 'error'); }
   };
 
+  async function handleThesisPdfUpload(e, thesis) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const path = `theses/${thesis.code}/deck.pdf`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('portal-documents')
+      .upload(path, file, { upsert: true });
+    if (uploadError) { console.error(uploadError); return; }
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('portal-documents')
+      .getPublicUrl(path);
+    await supabaseAdmin
+      .from('investment_theses')
+      .update({ pdf_url: publicUrl })
+      .eq('id', thesis.id);
+    loadTheses();
+  }
+
+  async function handleThesisPortfolioUpload(e, thesis) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const path = `theses/${thesis.code}/portfolio.png`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('portal-documents')
+      .upload(path, file, { upsert: true });
+    if (uploadError) { console.error(uploadError); return; }
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('portal-documents')
+      .getPublicUrl(path);
+    await supabaseAdmin
+      .from('investment_theses')
+      .update({ portfolio_image_url: publicUrl })
+      .eq('id', thesis.id);
+    loadTheses();
+  }
+
   const toggleVisibility = async (id, current) => {
     try {
       await supabaseAdmin.from('investment_theses').update({ is_visible: !current }).eq('id', id);
@@ -103,6 +139,42 @@ export default function ThesesManager() {
             <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5 }}>{t.description}</div>
             <div style={{ fontSize: 12, color: 'var(--text3)' }}>
               <b>Focus Areas:</b> {t.focus_areas}
+            </div>
+
+            {/* PDF Upload */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, marginBottom: 8 }}>
+                THESIS PDF
+              </div>
+              {t.pdf_url && (
+                <div style={{ fontSize: 12, color: '#00B4A6', marginBottom: 8 }}>
+                  ✓ PDF uploaded — <a href={t.pdf_url} target="_blank" rel="noreferrer" style={{ color: '#00B4A6' }}>Preview</a>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => handleThesisPdfUpload(e, t)}
+                style={{ fontSize: 12, color: 'var(--text2)' }}
+              />
+            </div>
+
+            {/* Portfolio Image Upload */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, marginBottom: 8 }}>
+                PORTFOLIO IMAGE
+              </div>
+              {t.portfolio_image_url && (
+                <div style={{ fontSize: 12, color: '#00B4A6', marginBottom: 8 }}>
+                  ✓ Image uploaded — <a href={t.portfolio_image_url} target="_blank" rel="noreferrer" style={{ color: '#00B4A6' }}>Preview</a>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => handleThesisPortfolioUpload(e, t)}
+                style={{ fontSize: 12, color: 'var(--text2)' }}
+              />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 10 }}>
               <span style={{ fontSize: 12, color: 'var(--text3)' }}>{t.company_count} companies</span>

@@ -124,13 +124,12 @@ export default function Portal({ email, onSignOut }) {
     { key: 'founder_success', title: 'Founder Success', startAngle: 120, color: '#9d8033' }
   ];
 
-  // Outer ring configuration (9 segments, dynamic angles to align with inner segments)
+  // Outer ring configuration (8 segments, dynamic angles to align with inner segments)
   const wheelOuterConfig = [
     { key: 'finvolve', title: 'Finvolve & Funds', group: 'founder_capital', color: '#4aae8c', lines: ['Finvolve &', 'Funds'], startAngle: 240, angleSpan: 120 },
-    { key: 'city_activation_team', title: 'City Activation Team', group: 'founder_access', color: '#00B4A6', lines: ['City', 'Activation', 'Team'], startAngle: 0, angleSpan: 30 },
-    { key: 'spaces', title: 'Spaces', group: 'founder_access', color: '#009e92', lines: ['Spaces'], startAngle: 30, angleSpan: 30 },
-    { key: 'vas', title: 'Value Added Services', group: 'founder_access', color: '#00887e', lines: ['Value Added', 'Services'], startAngle: 60, angleSpan: 30 },
-    { key: 'academia_corporate_programs', title: 'Academia & Corporate Programs', group: 'founder_access', color: '#00d0c0', lines: ['Academia &', 'Corporate', 'Programs'], startAngle: 90, angleSpan: 30 },
+    { key: 'spaces', title: 'Spaces', group: 'founder_access', color: '#009e92', lines: ['Spaces'], startAngle: 0, angleSpan: 40 },
+    { key: 'vas', title: 'Value Added Services', group: 'founder_access', color: '#00887e', lines: ['Value Added', 'Services'], startAngle: 40, angleSpan: 40 },
+    { key: 'academia_corporate_programs', title: 'Academia & Corporate Programs', group: 'founder_access', color: '#00d0c0', lines: ['Academia &', 'Corporate', 'Programs'], startAngle: 80, angleSpan: 40 },
     { key: 'starlink', title: 'Starlink', group: 'founder_success', color: '#c9a84c', lines: ['Starlink'], startAngle: 120, angleSpan: 30 },
     { key: 'page', title: 'Portfolio & Growth Engine (PAGE)', group: 'founder_success', color: '#b59640', lines: ['Portfolio &', 'Growth Engine', '(PAGE)'], startAngle: 150, angleSpan: 30 },
     { key: 'coes', title: 'CoEs', group: 'founder_success', color: '#9c8031', lines: ['CoEs'], startAngle: 180, angleSpan: 30 },
