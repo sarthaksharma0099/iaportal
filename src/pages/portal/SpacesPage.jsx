@@ -6,7 +6,8 @@ import {
   ComposableMap,
   Geographies,
   Geography,
-  Marker
+  Marker,
+  ZoomableGroup
 } from 'react-simple-maps';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -15,24 +16,33 @@ import 'react-pdf/dist/Page/TextLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc =
   `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const WORLD_GEO_URL =
-  'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+const INDIA_GEO_URL =
+  'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
 
-const CORRIDOR_COORDS = {
-  'Saudi Arabia': [45.0792, 23.8859],
-  'UAE': [53.8478, 23.4241],
-  'Germany': [10.4515, 51.1657],
-  'Japan': [138.2529, 36.2048],
-  'USA': [-95.7129, 37.0902],
-  'Australia': [134.0, -27.0],
-};
+const HUB_CITIES = [
+  {city:'Gurgaon', coordinates:[77.0266,28.4595], hubs:5, type:'HQ'},
+  {city:'New Delhi', coordinates:[77.1025,28.7041], hubs:3, type:'Hub'},
+  {city:'Noida', coordinates:[77.3910,28.5355], hubs:2, type:'Hub'},
+  {city:'Mumbai', coordinates:[72.8777,19.0760], hubs:3, type:'Hub'},
+  {city:'Bangalore', coordinates:[77.5946,12.9716], hubs:3, type:'Hub'},
+  {city:'Hyderabad', coordinates:[78.4867,17.3850], hubs:2, type:'Hub'},
+  {city:'Chennai', coordinates:[80.2707,13.0827], hubs:1, type:'Hub'},
+  {city:'Pune', coordinates:[73.8567,18.5204], hubs:2, type:'Hub'},
+  {city:'Kolkata', coordinates:[88.3639,22.5726], hubs:1, type:'Hub'},
+  {city:'Ahmedabad', coordinates:[72.5714,23.0225], hubs:2, type:'Hub'},
+  {city:'Jaipur', coordinates:[75.7873,26.9124], hubs:1, type:'Hub'},
+  {city:'Chandigarh', coordinates:[76.7794,30.7333], hubs:1, type:'Hub'},
+  {city:'Surat', coordinates:[72.8311,21.1702], hubs:1, type:'Hub'},
+  {city:'Ludhiana', coordinates:[75.8573,30.9010], hubs:1, type:'Hub'},
+  {city:'Amritsar', coordinates:[74.8723,31.6340], hubs:1, type:'Hub'},
+  {city:'Dehradun', coordinates:[78.0322,30.3165], hubs:1, type:'Hub'},
+];
 
-export default function StarlinkPage({ email }) {
+export default function SpacesPage({ email }) {
   const navigate = useNavigate();
   const [vertical, setVertical] = useState(null);
-  const [corridors, setCorridors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeCorridor, setActiveCorridor] = useState(null);
+  const [activeCity, setActiveCity] = useState(null);
+  const [mapPosition, setMapPosition] = useState({ coordinates: [82, 23], zoom: 1 });
   const isMobile = window.innerWidth <= 768;
 
   // PDF states
@@ -45,25 +55,15 @@ export default function StarlinkPage({ email }) {
   useEffect(() => {
     async function loadData() {
       try {
-        const [vRes, cRes] = await Promise.all([
-          supabase
-            .from('ecosystem_verticals')
-            .select('*')
-            .eq('key', 'starlink')
-            .single(),
-          supabase
-            .from('starlink_corridors')
-            .select('*')
-            .order('sort_order')
-        ]);
-
-        if (vRes.error) throw vRes.error;
-        setVertical(vRes.data);
-        setCorridors(cRes.data || []);
+        const { data, error } = await supabase
+          .from('ecosystem_verticals')
+          .select('*')
+          .eq('key', 'spaces')
+          .single();
+        if (error) throw error;
+        setVertical(data);
       } catch (e) {
-        console.error('Error loading Starlink data:', e);
-      } finally {
-        setLoading(false);
+        console.error('Error loading spaces:', e);
       }
     }
     loadData();
@@ -126,13 +126,7 @@ export default function StarlinkPage({ email }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [currentPage, numPages]);
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0a0a08', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 15, color: '#9e9b92' }}>Loading...</div>
-      </div>
-    );
-  }
+  const stats = (vertical?.stats || []).filter(s => s.value !== 'XX' && s.value !== '');
 
   return (
     <div style={{ background: '#0a0a08', minHeight: '100vh', color: '#fff', fontFamily: "'DM Sans', sans-serif" }}>
@@ -152,7 +146,7 @@ export default function StarlinkPage({ email }) {
         </button>
         {!isMobile && (
           <div style={{ fontSize: 13, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
-            STARLINK
+            SPACES
           </div>
         )}
         <div style={{ fontSize: 13, color: '#00B4A6' }}>IA Multiverse</div>
@@ -163,28 +157,28 @@ export default function StarlinkPage({ email }) {
         <div style={{ padding: isMobile ? '60px 20px 40px' : '80px 80px 60px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
             <div style={{ width: 40, height: 1, background: '#c9a84c' }} />
-            <span style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600 }}>FOUNDER SUCCESS</span>
+            <span style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600 }}>FOUNDER ACCESS</span>
           </div>
 
           <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 36 : 64, fontWeight: 300, marginBottom: 16, color: '#fff' }}>
-            Starlink
+            Spaces
           </h1>
-          <p style={{ fontSize: isMobile ? 14 : 18, color: '#9e9b92', maxWidth: 600, lineHeight: 1.6, marginBottom: 48 }}>
+          <p style={{ fontSize: 18, color: '#9e9b92', maxWidth: 600, lineHeight: 1.6, marginBottom: 48 }}>
             {vertical?.description}
           </p>
 
           <div style={{ display: 'flex', gap: 0, alignItems: 'stretch' }}>
-            {(vertical?.stats || []).map((s, i) => (
+            {stats.map((s, i) => (
               <React.Fragment key={i}>
                 <div style={{ padding: isMobile ? '0 12px' : '0 32px', textAlign: 'center', minWidth: isMobile ? 80 : 120 }}>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 32 : 48, color: '#c9a84c', fontWeight: 300, lineHeight: 1, marginBottom: 8 }}>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 28 : 48, color: '#c9a84c', fontWeight: 300, lineHeight: 1, marginBottom: 8 }}>
                     {s.value}
                   </div>
                   <div style={{ fontSize: 11, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {s.label}
                   </div>
                 </div>
-                {i < (vertical?.stats || []).length - 1 && (
+                {i < stats.length - 1 && (
                   <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', alignSelf: 'stretch' }} />
                 )}
               </React.Fragment>
@@ -192,217 +186,238 @@ export default function StarlinkPage({ email }) {
           </div>
         </div>
 
-        {/* GLOBAL CORRIDORS SECTION */}
-        <div style={{ padding: isMobile ? '40px 20px' : '60px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* INDIA HUB MAP SECTION */}
+        <div style={{ padding: isMobile ? '40px 16px' : '60px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>
-            ACTIVE CORRIDORS
+            OUR NETWORK
           </div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 24 : 36, fontWeight: 300, color: '#fff', marginBottom: 40 }}>
-            {corridors.length} Active Global Corridors
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 24 : 36, fontWeight: 300, color: '#fff', marginBottom: 8 }}>
+            33 Hubs Across India
           </h2>
+          <p style={{ fontSize: 15, color: '#9e9b92', maxWidth: 600, lineHeight: 1.6 }}>
+            Tier 2 & 3 cities chosen for industry strength, talent density, and founder catchment
+          </p>
 
-          {/* World Map */}
           <div style={{
-            position: 'relative',
-            background: 'rgba(0,180,166,0.04)',
-            border: '1px solid rgba(0,180,166,0.1)',
+            background: 'linear-gradient(160deg, #0f1f1a 0%, #0a1510 50%, #081210 100%)',
             borderRadius: 16,
+            border: '1px solid rgba(0,180,166,0.15)',
             overflow: 'hidden',
-            marginBottom: 40
+            maxWidth: isMobile ? '100%' : 760,
+            margin: '32px auto 0',
+            padding: '8px',
+            position: 'relative',
           }}>
             <ComposableMap
               projection="geoNaturalEarth1"
               projectionConfig={{
-                scale: 153,
-                center: [10, -5],
+                scale: 1000,
+                center: [82, 23],
               }}
-              width={800}
-              height={450}
               style={{ width: '100%', height: 'auto' }}
             >
-              <Geographies geography={WORLD_GEO_URL}>
-                {({ geographies }) =>
-                  geographies.map(geo => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      style={{
-                        default: {
-                          fill: 'rgba(0,180,166,0.08)',
-                          stroke: 'rgba(0,180,166,0.2)',
-                          strokeWidth: 0.5,
-                          outline: 'none'
-                        },
-                        hover: {
-                          fill: 'rgba(0,180,166,0.12)',
-                          stroke: 'rgba(0,180,166,0.3)',
-                          strokeWidth: 0.5,
-                          outline: 'none'
-                        },
-                        pressed: {
-                          fill: 'rgba(0,180,166,0.08)',
-                          outline: 'none'
-                        }
-                      }}
-                    />
-                  ))
-                }
-              </Geographies>
+              <ZoomableGroup
+                zoom={mapPosition.zoom}
+                center={mapPosition.coordinates}
+                onMoveEnd={setMapPosition}
+                minZoom={1}
+                maxZoom={6}
+              >
+                <Geographies geography={INDIA_GEO_URL}>
+                  {({ geographies }) =>
+                    geographies.map(geo => (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        style={{
+                          default: {
+                            fill: 'rgba(0,180,166,0.12)',
+                            stroke: 'rgba(0,180,166,0.45)',
+                            strokeWidth: 0.8,
+                            outline: 'none',
+                          },
+                          hover: {
+                            fill: 'rgba(0,180,166,0.22)',
+                            stroke: 'rgba(0,180,166,0.6)',
+                            strokeWidth: 0.8,
+                            outline: 'none',
+                          },
+                          pressed: { outline: 'none' }
+                        }}
+                      />
+                    ))
+                  }
+                </Geographies>
 
-              {corridors.map(c => {
-                const coords = CORRIDOR_COORDS[c.country];
-                if (!coords) return null;
-                const isHardLaunch = c.launch_model === 'Hard Launch';
-                const isActive = activeCorridor?.id === c.id;
-
-                return (
+                {HUB_CITIES.map(loc => (
                   <Marker
-                    key={c.id}
-                    coordinates={coords}
-                    onMouseEnter={() => setActiveCorridor(c)}
-                    onMouseLeave={() => setActiveCorridor(null)}
-                    onClick={() => setActiveCorridor(c)}
+                    key={loc.city}
+                    coordinates={loc.coordinates}
+                    onMouseEnter={() => setActiveCity(loc)}
+                    onMouseLeave={() => setActiveCity(null)}
+                    onClick={() => setActiveCity(loc)}
                   >
-                    {/* Pulse ring */}
                     <circle
-                      r={isActive ? 14 : 10}
+                      r={loc.type === 'HQ' ? 8 : 5}
                       fill="none"
-                      stroke={isHardLaunch ? '#c9a84c' : '#00B4A6'}
-                      strokeWidth="1"
-                      opacity="0.4"
-                      style={{ transition: 'r 0.3s ease', cursor: 'pointer' }}
+                      stroke={loc.type === 'HQ' ? '#c9a84c' : '#00B4A6'}
+                      strokeWidth={1}
+                      opacity={0.35}
                     />
-                    {/* Main pin */}
                     <circle
-                      r={5}
-                      fill={isHardLaunch ? '#c9a84c' : '#00B4A6'}
-                      stroke="rgba(255,255,255,0.8)"
-                      strokeWidth="1.5"
+                      r={loc.type === 'HQ' ? 4 : 3}
+                      fill={loc.type === 'HQ' ? '#c9a84c' : '#00B4A6'}
+                      stroke={loc.type === 'HQ' ? 'rgba(201,168,76,0.4)' : 'rgba(0,180,166,0.4)'}
+                      strokeWidth={1.5}
                       style={{ cursor: 'pointer' }}
                     />
                   </Marker>
-                );
-              })}
+                ))}
+              </ZoomableGroup>
             </ComposableMap>
-            {activeCorridor && (
-              <div style={{
-                position: 'absolute',
-                bottom: 24,
-                left: 24,
-                background: 'rgba(10,10,8,0.92)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 12,
-                padding: isMobile ? '16px 20px' : '28px 36px',
-                minWidth: isMobile ? 200 : 260,
-                maxWidth: isMobile ? 260 : 320,
-                zIndex: 10,
-                pointerEvents: 'none',
-              }}>
-                <div style={{
-                  fontSize: 10,
-                  color: '#c9a84c',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.15em',
-                  fontWeight: 600,
-                  marginBottom: 8
-                }}>
-                  Active Corridor
-                </div>
-                <div style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: isMobile ? 24 : 36,
-                  fontWeight: 300,
-                  color: '#fff',
-                  lineHeight: 1,
-                  marginBottom: 4
-                }}>
-                  {activeCorridor.country}
-                </div>
-                <div style={{
-                  fontSize: 13,
+
+            {/* Zoom controls */}
+            <div style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              zIndex: 10,
+            }}>
+              <button
+                onClick={() => setMapPosition(pos => ({ ...pos, zoom: Math.min(pos.zoom * 1.5, 6) }))}
+                style={{
+                  width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
+                  background: 'rgba(0,180,166,0.15)',
+                  border: '1px solid rgba(0,180,166,0.3)',
+                  borderRadius: 6,
                   color: '#00B4A6',
-                  marginBottom: 12
-                }}>
-                  {activeCorridor.partner}
-                </div>
-                <div style={{
-                  fontSize: 12,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                +
+              </button>
+              <button
+                onClick={() => setMapPosition(pos => ({ ...pos, zoom: Math.max(pos.zoom / 1.5, 1) }))}
+                style={{
+                  width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
+                  background: 'rgba(0,180,166,0.15)',
+                  border: '1px solid rgba(0,180,166,0.3)',
+                  borderRadius: 6,
+                  color: '#00B4A6',
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                −
+              </button>
+              <button
+                onClick={() => setMapPosition({ coordinates: [82, 23], zoom: 1 })}
+                style={{
+                  width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6,
                   color: '#9e9b92',
-                  marginBottom: 10
-                }}>
-                  {activeCorridor.sectors}
+                  fontSize: 10,
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'DM Sans', sans-serif",
+                  letterSpacing: '0.05em',
+                }}
+              >
+                ↺
+              </button>
+            </div>
+          </div>
+
+          {/* Info panel */}
+          <div style={{
+            minHeight: 80,
+            marginTop: 16,
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.07)',
+            background: '#111110',
+            padding: isMobile ? '14px 16px' : '20px 28px',
+            transition: 'opacity 0.2s',
+            opacity: activeCity ? 1 : 0.4,
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: isMobile ? 12 : 24,
+            flexWrap: 'wrap',
+          }}>
+            {activeCity ? (
+              <>
+                <div>
+                  <div style={{ fontSize: 10, color: '#c9a84c', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, marginBottom: 6 }}>
+                    {activeCity.type === 'HQ' ? 'HEADQUARTERS' : 'HUB LOCATION'}
+                  </div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 22 : 32, fontWeight: 300, color: '#fff', lineHeight: 1 }}>
+                    {activeCity.city}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+                    HUBS IN CITY
+                  </div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 22 : 32, color: '#00B4A6' }}>
+                    {activeCity.hubs}
+                  </div>
                 </div>
                 <div style={{
-                  display: 'inline-block',
-                  padding: '4px 12px',
+                  padding: '6px 16px',
                   borderRadius: 20,
                   fontSize: 11,
                   fontWeight: 600,
                   letterSpacing: '0.08em',
-                  background: activeCorridor.launch_model === 'Hard Launch'
-                    ? 'rgba(201,168,76,0.15)'
-                    : 'rgba(0,180,166,0.1)',
-                  border: `1px solid ${activeCorridor.launch_model === 'Hard Launch'
-                    ? 'rgba(201,168,76,0.4)'
-                    : 'rgba(0,180,166,0.3)'}`,
-                  color: activeCorridor.launch_model === 'Hard Launch'
-                    ? '#c9a84c'
-                    : '#00B4A6',
+                  background: activeCity.type === 'HQ' ? 'rgba(201,168,76,0.15)' : 'rgba(0,180,166,0.1)',
+                  border: `1px solid ${activeCity.type === 'HQ' ? 'rgba(201,168,76,0.4)' : 'rgba(0,180,166,0.3)'}`,
+                  color: activeCity.type === 'HQ' ? '#c9a84c' : '#00B4A6',
                 }}>
-                  {activeCorridor.launch_model.toUpperCase()}
+                  {activeCity.type === 'HQ' ? 'HEADQUARTERS' : 'ACTIVE HUB'}
                 </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: '#5c5a54', width: '100%', textAlign: 'center' }}>
+                Hover a pin to explore hub details
               </div>
             )}
           </div>
 
-          {/* Corridor Cards Grid */}
+          {/* Map legend */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-            gap: 16
+            display: 'flex',
+            gap: 32,
+            justifyContent: 'center',
+            marginTop: 20,
+            padding: '12px 0',
+            borderTop: '1px solid rgba(255,255,255,0.04)'
           }}>
-            {corridors.map(c => {
-              const isHardLaunch = c.launch_model === 'Hard Launch';
-              return (
-                <div
-                  key={c.id}
-                  style={{
-                    background: '#111110',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    borderRadius: 12,
-                    padding: 24
-                  }}
-                >
-                  <div style={{ fontSize: 18, color: '#fff', fontWeight: 500, marginBottom: 8 }}>
-                    {c.country}
-                  </div>
-                  {c.partner && (
-                    <div style={{ fontSize: 13, color: '#00B4A6', marginBottom: 6 }}>
-                      {c.partner}
-                    </div>
-                  )}
-                  {c.sectors && (
-                    <div style={{ fontSize: 13, color: '#9e9b92', marginBottom: 12 }}>
-                      {c.sectors}
-                    </div>
-                  )}
-                  <span style={{
-                    fontSize: 10,
-                    padding: '3px 10px',
-                    borderRadius: 20,
-                    background: isHardLaunch ? 'rgba(201,168,76,0.12)' : 'transparent',
-                    color: isHardLaunch ? '#c9a84c' : '#00B4A6',
-                    border: `1px solid ${isHardLaunch ? 'rgba(201,168,76,0.3)' : 'rgba(0,180,166,0.3)'}`,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    {c.launch_model}
-                  </span>
-                </div>
-              );
-            })}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#9e9b92' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c9a84c' }} />
+              Headquarters (Gurgaon)
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#9e9b92' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00B4A6' }} />
+              Hub Locations
+            </div>
+            <div style={{ fontSize: 12, color: '#5c5a54' }}>
+              33 hubs · 18 cities
+            </div>
+          </div>
+
+          {/* Zoom hint */}
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#5c5a54', marginTop: 8 }}>
+            Scroll to zoom · Drag to pan · Pinch on mobile
           </div>
         </div>
 
@@ -415,7 +430,7 @@ export default function StarlinkPage({ email }) {
             boxSizing: 'border-box',
             maxWidth: '100%'
           }}>
-            <div style={{ marginBottom: isMobile ? 20 : 32, paddingLeft: isMobile ? 0 : 40 }}>
+            <div style={{ marginBottom: 32, paddingLeft: 40 }}>
               <p style={{
                 fontSize: 11, letterSpacing: '0.15em',
                 color: '#c9a84c', textTransform: 'uppercase',

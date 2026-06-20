@@ -7,6 +7,7 @@ export default function ThesesEcosystemPage({ email }) {
   const navigate = useNavigate();
   const [theses, setTheses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = window.innerWidth <= 768;
 
   useEffect(() => {
     async function load() {
@@ -49,7 +50,7 @@ export default function ThesesEcosystemPage({ email }) {
         background: 'rgba(10,10,8,0.95)', backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 48px'
+        padding: isMobile ? '0 16px' : '0 48px'
       }}>
         <button
           onClick={() => navigate('/')}
@@ -57,29 +58,31 @@ export default function ThesesEcosystemPage({ email }) {
         >
           ← Back to Portal
         </button>
-        <div style={{ fontSize: 13, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
-          INVESTMENT THESES
-        </div>
+        {!isMobile && (
+          <div style={{ fontSize: 13, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+            INVESTMENT THESES
+          </div>
+        )}
         <div style={{ fontSize: 13, color: '#00B4A6' }}>IA Multiverse</div>
       </div>
 
       <div style={{ paddingTop: 64 }}>
         {/* HERO SECTION */}
-        <div style={{ padding: '80px 80px 60px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ padding: isMobile ? '60px 20px 40px' : '80px 80px 60px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
             <div style={{ width: 40, height: 1, background: '#c9a84c' }} />
             <span style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600 }}>FOUNDER SUCCESS</span>
           </div>
 
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 64, fontWeight: 300, marginBottom: 16, color: '#fff' }}>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 36 : 64, fontWeight: 300, marginBottom: 16, color: '#fff' }}>
             Investment Theses
           </h1>
 
           <div style={{ display: 'flex', gap: 0, alignItems: 'stretch', marginTop: 48 }}>
             {stats.map((s, i) => (
               <React.Fragment key={i}>
-                <div style={{ padding: '0 32px', textAlign: 'center', minWidth: 120 }}>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, color: '#c9a84c', fontWeight: 300, lineHeight: 1, marginBottom: 8 }}>
+                <div style={{ padding: isMobile ? '0 8px' : '0 32px', textAlign: 'center', minWidth: isMobile ? 80 : 120 }}>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 28 : 48, color: '#c9a84c', fontWeight: 300, lineHeight: 1, marginBottom: 8 }}>
                     {s.value}
                   </div>
                   <div style={{ fontSize: 11, color: '#9e9b92', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -95,15 +98,15 @@ export default function ThesesEcosystemPage({ email }) {
         </div>
 
         {/* THESIS CARDS SECTION */}
-        <div style={{ padding: '60px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ padding: isMobile ? '40px 20px' : '60px 80px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>
             OUR THESES
           </div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 300, color: '#fff', marginBottom: 40 }}>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 24 : 36, fontWeight: 300, color: '#fff', marginBottom: 40 }}>
             Four Theses. One Platform.
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 24 }}>
             {theses.map(t => (
               <div
                 key={t.id}
@@ -112,13 +115,13 @@ export default function ThesesEcosystemPage({ email }) {
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderLeft: `4px solid ${t.color}`,
                   borderRadius: '0 16px 16px 0',
-                  padding: 32,
+                  padding: isMobile ? 20 : 32,
                   display: 'flex',
                   flexDirection: 'column',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 300, color: '#fff', margin: 0 }}>{t.name}</h3>
+                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 20 : 28, fontWeight: 300, color: '#fff', margin: 0 }}>{t.name}</h3>
                   <Badge variant="live">{t.code}</Badge>
                 </div>
 
@@ -182,11 +185,11 @@ export default function ThesesEcosystemPage({ email }) {
         </div>
 
         {/* PORTFOLIO COMPANIES SECTION */}
-        <div style={{ padding: '60px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ padding: isMobile ? '40px 20px' : '60px 80px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontSize: 11, color: '#c9a84c', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>
             PORTFOLIO
           </div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 300, color: '#fff' }}>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? 24 : 36, fontWeight: 300, color: '#fff' }}>
             Companies Across Theses
           </h2>
 
@@ -207,10 +210,12 @@ export default function ThesesEcosystemPage({ email }) {
         {/* FOOTER */}
         <div style={{
           borderTop: '1px solid rgba(255,255,255,0.06)',
-          padding: '32px 80px',
+          padding: isMobile ? '24px 20px' : '32px 80px',
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          gap: isMobile ? 8 : 0
         }}>
           <span style={{ fontSize: 14, color: '#9e9b92' }}>
             © 2026 India Accelerator — Confidential

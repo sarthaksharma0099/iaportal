@@ -14,6 +14,7 @@ import ProgramsPage from './pages/portal/ProgramsPage';
 import ThesesPage from './pages/portal/ThesesPageLegacy';
 import StarlinkPage from './pages/portal/StarlinkPage';
 import ThesesEcosystemPage from './pages/portal/ThesesPage';
+import SpacesPage from './pages/portal/SpacesPage';
 import EcosystemDetail from './pages/portal/EcosystemDetail';
 import GenericSectionPage from './pages/portal/GenericSectionPage';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -158,6 +159,12 @@ export default function App() {
         <Route path="/ecosystem/starlink" element={
           investorEmail
             ? <StarlinkPage email={investorEmail} />
+            : <Navigate to="/" replace />
+        } />
+
+        <Route path="/ecosystem/spaces" element={
+          investorEmail
+            ? <SpacesPage email={investorEmail} />
             : <Navigate to="/" replace />
         } />
 
